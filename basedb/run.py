@@ -135,8 +135,8 @@ def run():
 
     while True:
         head_block_number = b.info()['head_block_number']
-        # end_block_num = int(head_block_number)
-        end_block_num = 34
+        end_block_num = int(head_block_number)
+        # end_block_num = 34
 
         if start_block_num > end_block_num:
             print(':zap: WARNING: start_block_num > end_block_num')
