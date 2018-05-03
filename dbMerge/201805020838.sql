@@ -29,8 +29,10 @@ CREATE TABLE `transactions` (
   `id` bigint(18) unsigned NOT NULL AUTO_INCREMENT,
   `block_id` bigint(11) NOT NULL,
   `content` longtext NOT NULL,
+  `block_num` bigint(11) NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `block_id` (`block_id`)
+  KEY `block_id` (`block_id`),
+  KEY `block_num` (`block_num`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;

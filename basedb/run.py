@@ -45,7 +45,7 @@ try:
         charset = 'utf8',
         cursorclass = pymysql.cursors.DictCursor)
 except Exception as e:
-    print(e)
+    print('[warning] DB connection failed', e)
     sys.exit()
 
 # steem lib init
@@ -59,12 +59,17 @@ b = Blockchain(s)
 # [start, end]
 def worker(start, end):
     global s, b, conn
-    print('start from {start} to {end}'.format(start=start, end=end))
-    block_infos = s.get_blocks(range(start, end+1))
+    print("\nstart from {start} to {end}".format(start=start, end=end))
+    try:
+        block_infos = s.get_blocks(range(start, end+1))
+    except Exception as e:
+        print('[warning]:', e)
+        sendMsg('[warning]: blocks from %s to %s didnot get.  %s' % (start, end, e))
+        return
     # print(block_infos)
-    block_num = start
     for block_info in block_infos:
         transactions = block_info['transactions']
+        block_num = block_info['block_num']
         del block_info['transactions']
         tmp_block_info = json.dumps(block_info)
         insert_data = (
@@ -74,27 +79,42 @@ def worker(start, end):
             tmp_block_info,
             block_info['timestamp']
         )
-        sql = '''
-            insert into `blocks` (
-            `block_num`,
-            `previous`,
-            `block_id`,
-            `block_info`,
-            `timestamp`
-            ) values (%d, '%s', '%s', '%s', '%s')''' % insert_data
+        print('[insert_data]:', insert_data)
         with conn.cursor() as cursor:
-            cursor.execute(sql)
+            try:
+                sql = '''
+                    insert into `blocks` (
+                    `block_num`,
+                    `previous`,
+                    `block_id`,
+                    `block_info`,
+                    `timestamp`
+                    ) values (%s, %s, %s, %s, %s)'''
+                cursor.execute(sql, insert_data)
+                conn.commit()
+            except Exception as e:
+                conn.rollback()
+                print('[warning]insert block data error', e, sql, insert_data)
+                sendMsg('Error: %s | %s' % (e, sql))
+                continue
             block_record_id = int(cursor.lastrowid)
-        conn.commit()
         tmp_trans = []
         for trans in transactions:
-            tmp_trans.append((block_record_id, json.dumps(trans)))
+            tmp_trans.append((block_record_id, json.dumps(trans), block_num))
         if tmp_trans != []:
+            print('[insert_transactions]', tmp_trans)
             with conn.cursor() as cursor:
-                cursor.executemany('insert into `transactions` (`block_id`, `content`) \
-                    values (%d, %s)', tmp_trans)
-            conn.commit()
-        block_num += 1
+                try:
+                    cursor.executemany(
+                        "insert into `transactions` (`block_id`, `content`, `block_num`) values (%s, %s, %s)",
+                        tmp_trans
+                    )
+                    conn.commit()
+                except Exception as e:
+                    conn.rollback()
+                    print('[warning]insert transactions error', e)
+                    sendMsg('Error: %s' % e)
+                    continue
 
 def getLatestBlockNumFromDB():
     global conn 
@@ -107,11 +127,11 @@ def getLatestBlockNumFromDB():
             cursor.execute(sql)
             result = cursor.fetchone()
             if result:
-                return result['block_num']
+                return int(result['block_num']) + 1
             else:
                 return 1
     except Exception as  e:
-        print(e)
+        print('[warning]get latest block num error', e)
         return 1
 
 def sendMsg(msg):
@@ -129,9 +149,9 @@ def sendMsg(msg):
 def run():
     global s, b, env_block_num, step, sleep_time
     if env_block_num != None:
-        start_block_num = env_block_num
+        start_block_num = int(env_block_num)
     else:
-        start_block_num = getLatestBlockNumFromDB()
+        start_block_num = int(getLatestBlockNumFromDB())
 
     while True:
         head_block_number = b.info()['head_block_number']
