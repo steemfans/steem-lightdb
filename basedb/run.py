@@ -9,8 +9,14 @@ from steem.steemd import Steemd
 
 env_dist = os.environ
 
-step = 10 - 1 
 sleep_time = 3
+
+# get step from env
+env_step = env_dist.get('STEP')
+if env_step == None:
+    step = 10 - 1
+else:
+    step = int(env_step)
 
 # get block_num from env
 env_block_num = env_dist.get('BLOCK_NUM')
