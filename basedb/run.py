@@ -76,18 +76,21 @@ def worker(start, end):
     for block_info in block_infos:
         transactions = block_info['transactions']
         block_num = block_info['block_num']
+        previous = block_info['previous']
+        block_id = block_info['block_id']
+        timestamp = block_info['timestamp']
         del block_info['transactions']
-        tmp_block_info = json.dumps(block_info)
-        insert_data = (
-            block_num,
-            block_info['previous'],
-            block_info['block_id'],
-            tmp_block_info,
-            block_info['timestamp']
-        )
         del block_info['previous']
         del block_info['block_id']
         del block_info['timestamp']
+        tmp_block_info = json.dumps(block_info)
+        insert_data = (
+            block_num,
+            previous,
+            block_id,
+            tmp_block_info,
+            timestamp
+        )
         print('[insert_data]:', insert_data)
         with conn.cursor() as cursor:
             try:
