@@ -85,6 +85,9 @@ def worker(start, end):
             tmp_block_info,
             block_info['timestamp']
         )
+        del block_info['previous']
+        del block_info['block_id']
+        del block_info['timestamp']
         print('[insert_data]:', insert_data)
         with conn.cursor() as cursor:
             try:
