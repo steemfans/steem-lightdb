@@ -53,6 +53,16 @@ MariaDB [(none)]> exit
 $ docker run -it -d --name steem-lightdb-base -e DB_HOST=172.19.0.2 -e DB_NAME=steemdb -e DB_USER=root -e DB_PASS=123456 --restart always --network lightdb --ip "172.19.0.3" ety001/steem-lightdb-base:latest
 ```
 
-If you want to get notify by Discord, add `-e DISCORD=YOUR_DISCORD_WEBHOOK` in the command.
+If you want to get notifications by Discord, add `-e DISCORD=YOUR_DISCORD_WEBHOOK` in the command.
+
+### Run the Base Data Filled container
+
+Sometimes the base script will not get data from Blockchain
+because of the unstable network. So we need to run another script
+to keep the data same as the Blockchain.
+
+```
+$ docker run -it -d --name steem-lightdb-base-fill-db -e DB_HOST=172.19.0.2 -e DB_NAME=steemdb -e DB_USER=root -e DB_PASS=123456 --restart always --network lightdb --ip "172.19.0.4" ety001/steem-lightdb-base:latest
+```
 
 (Unfinished...)
