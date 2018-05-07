@@ -9,7 +9,8 @@ from steem.steemd import Steemd
 
 env_dist = os.environ
 
-sleep_time = 3
+sleep_time = 10
+step = 100
 
 # get discord webhook
 discord_webhook = env_dist.get('DISCORD')
@@ -52,12 +53,11 @@ steemd_nodes = [
 s = Steemd(nodes=steemd_nodes)
 b = Blockchain(s)
 
-# [start, end]
-def worker(start, end):
+def worker(block_nums):
     global s, b, conn
-    print("\nstart from {start} to {end}".format(start=start, end=end))
+    print("\nget blocks: {block_nums}\n".format(block_nums=block_nums))
     try:
-        block_infos = s.get_blocks(range(start, end+1))
+        block_infos = s.get_blocks(block_nums)
     except Exception as e:
         print('[warning]:', e)
         sendMsg('[warning]: blocks from %s to %s didnot get.  %s' % (start, end, e))
@@ -147,8 +147,9 @@ def getLostBlocks():
             cursor.execute('select block_num from blocks order by block_num asc')
             results = cursor.fetchall()
             for row in results:
-                exists.append(row[0])
-        lost = all_list - exists
+                exists.append(row['block_num'])
+        lost = set(all_list) - set(exists)
+        return list(lost)
 
 def sendMsg(msg):
     global discord_webhook
@@ -163,28 +164,22 @@ def sendMsg(msg):
         print('discord url not found')
 
 def run():
-    global s, b, sleep_time
+    global s, b, sleep_time, step
 
     while True:
-        head_block_number = b.info()['head_block_number']
-        end_block_num = int(head_block_number)
-        # end_block_num = 34
-
-        if start_block_num > end_block_num:
-            print(':zap: WARNING: start_block_num > end_block_num')
-            sendMsg(':zap: WARNING: start_block_num > end_block_num')
+        lost = getLostBlocks()
+        if (lost == False):
+            print("no lost block\n")
             time.sleep(sleep_time)
             continue
-
-        tmp_start = start_block_num
-        tmp_end = tmp_start + step
-        while tmp_end <= end_block_num:
-            worker(tmp_start, tmp_end)
-            tmp_start = tmp_end + 1
-            tmp_end = tmp_start + step
-        worker(tmp_start, end_block_num)
-
-        start_block_num = end_block_num + 1
+        length = len(lost)
+        if (length == 0):
+            print("no lost block\n")
+            time.sleep(sleep_time)
+            continue
+        r = [lost[i:i+step] for i in range(0, length, step)]
+        for blocks in r:
+            worker(blocks)
         time.sleep(sleep_time)
 
 if __name__ == '__main__':
