@@ -11,6 +11,7 @@ env_dist = os.environ
 
 sleep_time = 10
 step = 100
+last_block_num = 0
 
 # get discord webhook
 discord_webhook = env_dist.get('DISCORD')
@@ -137,19 +138,21 @@ def getLatestBlockNumFromDB():
         return 1
 
 def getLostBlocks():
+    global last_block_num
     latest_block_num = getLatestBlockNumFromDB()
     if latest_block_num <= 1:
         return False
     else:
-        all_list = range(1, latest_block_num)
+        all_list = range(last_block_num + 1, latest_block_num)
         exists = []
         with conn.cursor() as cursor:
-            cursor.execute('select block_num from blocks order by block_num asc')
+            sql = 'select block_num from blocks where block_num > %s order by block_num asc'
+            cursor.execute(sql, (last_block_num))
             results = cursor.fetchall()
             for row in results:
                 exists.append(row['block_num'])
         lost = set(all_list) - set(exists)
-        return list(lost)
+        return {"lost": list(lost), "latest_block_num": latest_block_num}
 
 def sendMsg(msg):
     global discord_webhook
@@ -164,7 +167,7 @@ def sendMsg(msg):
         print('discord url not found')
 
 def run():
-    global s, b, sleep_time, step
+    global s, b, sleep_time, step, last_block_num
 
     while True:
         lost = getLostBlocks()
@@ -172,14 +175,15 @@ def run():
             print("no lost block\n")
             time.sleep(sleep_time)
             continue
-        length = len(lost)
+        length = len(lost['lost'])
         if (length == 0):
             print("no lost block\n")
             time.sleep(sleep_time)
             continue
-        r = [lost[i:i+step] for i in range(0, length, step)]
+        r = [lost['lost'][i:i+step] for i in range(0, length, step)]
         for blocks in r:
             worker(blocks)
+        last_block_num = lost['latest_block_num']
         time.sleep(sleep_time)
 
 if __name__ == '__main__':
