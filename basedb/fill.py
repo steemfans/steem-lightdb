@@ -144,6 +144,7 @@ def getLostBlocks():
         return False
     else:
         all_list = range(last_block_num + 1, latest_block_num)
+        print("block nums from %d to %d\n" % (last_block_num + 1, latest_block_num))
         exists = []
         with conn.cursor() as cursor:
             sql = 'select block_num from blocks where block_num > %s order by block_num asc'
@@ -184,6 +185,7 @@ def run():
         for blocks in r:
             worker(blocks)
         last_block_num = lost['latest_block_num']
+        print("\n\n")
         time.sleep(sleep_time)
 
 if __name__ == '__main__':
