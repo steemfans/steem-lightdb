@@ -138,8 +138,7 @@ def getLatestBlockNumFromDB():
         print('[warning]get latest block num error', e)
         return 1
 
-def getLostBlocks():
-    global last_block_num
+def getLostBlocks(last_block_num):
     latest_block_num = getLatestBlockNumFromDB()
     if latest_block_num <= 1:
         return False
@@ -172,7 +171,7 @@ def run():
     global s, b, sleep_time, step, last_block_num
 
     while True:
-        lost = getLostBlocks()
+        lost = getLostBlocks(last_block_num)
         if (lost == False):
             print("no lost block\n")
             time.sleep(sleep_time)
