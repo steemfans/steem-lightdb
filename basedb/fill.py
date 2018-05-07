@@ -74,6 +74,7 @@ def worker(block_nums):
         del block_info['previous']
         del block_info['block_id']
         del block_info['timestamp']
+        del block_info['block_num']
         tmp_block_info = json.dumps(block_info)
         insert_data = (
             block_num,
