@@ -138,17 +138,17 @@ def getLatestBlockNumFromDB():
         print('[warning]get latest block num error', e)
         return 1
 
-def getLostBlocks(last_block_num):
+def getLostBlocks(start):
     latest_block_num = getLatestBlockNumFromDB()
     if latest_block_num <= 1:
         return False
     else:
-        all_list = range(last_block_num + 1, latest_block_num)
-        print("block nums from %d to %d\n" % (last_block_num + 1, latest_block_num))
+        all_list = range(start, latest_block_num)
+        print("block nums from %d to %d\n" % (start, latest_block_num))
         exists = []
         with conn.cursor() as cursor:
-            sql = 'select block_num from blocks where block_num > %s order by block_num asc'
-            cursor.execute(sql, (last_block_num))
+            sql = 'select block_num from blocks where block_num >= %s and block_num < %s order by block_num asc'
+            cursor.execute(sql, (start, latest_block_num))
             results = cursor.fetchall()
             for row in results:
                 exists.append(row['block_num'])
@@ -168,10 +168,11 @@ def sendMsg(msg):
         print('discord url not found')
 
 def run():
-    global s, b, sleep_time, step, last_block_num
+    global s, b, sleep_time, step
+    start = 1
 
     while True:
-        lost = getLostBlocks(last_block_num)
+        lost = getLostBlocks(start)
         if (lost == False):
             print("no lost block\n")
             time.sleep(sleep_time)
@@ -184,8 +185,8 @@ def run():
         r = [lost['lost'][i:i+step] for i in range(0, length, step)]
         for blocks in r:
             worker(blocks)
-        last_block_num = lost['latest_block_num']
-        print("\n\n")
+        start = lost['latest_block_num']
+        print("new start: %d\n\n" % (start))
         time.sleep(sleep_time)
 
 if __name__ == '__main__':
