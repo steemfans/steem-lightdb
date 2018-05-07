@@ -11,7 +11,6 @@ env_dist = os.environ
 
 sleep_time = 10
 step = 100
-last_block_num = 0
 
 # get discord webhook
 discord_webhook = env_dist.get('DISCORD')
@@ -121,7 +120,7 @@ def worker(block_nums):
                     continue
 
 def getLatestBlockNumFromDB():
-    global conn 
+    global conn
     sql = '''
     Select block_num from blocks
     Order by block_num desc limit 1;
@@ -134,26 +133,28 @@ def getLatestBlockNumFromDB():
                 return int(result['block_num']) + 1
             else:
                 return 1
+        conn.commit()
     except Exception as  e:
         print('[warning]get latest block num error', e)
         return 1
 
-def getLostBlocks(start):
-    latest_block_num = getLatestBlockNumFromDB()
-    if latest_block_num <= 1:
-        return {"lost": False, "latest_block_num": latest_block_num}
+def getLostBlocks(start, end):
+    global conn
+    if end <= 1:
+        return False
     else:
-        all_list = range(start, latest_block_num)
-        print("block nums from %d to %d\n" % (start, latest_block_num))
+        all_list = range(start, end)
+        print("block nums from %d to %d\n" % (start, end))
         exists = []
         with conn.cursor() as cursor:
             sql = 'select block_num from blocks where block_num >= %s and block_num < %s order by block_num asc'
-            cursor.execute(sql, (start, latest_block_num))
+            cursor.execute(sql, (start, end))
             results = cursor.fetchall()
             for row in results:
                 exists.append(row['block_num'])
+        conn.commit()
         lost = set(all_list) - set(exists)
-        return {"lost": list(lost), "latest_block_num": latest_block_num}
+        return list(lost)
 
 def sendMsg(msg):
     global discord_webhook
@@ -172,22 +173,23 @@ def run():
     start = 1
 
     while True:
-        lost = getLostBlocks(start)
-        if (lost['lost'] == False):
-            start = lost['latest_block_num']
+        latest_block_num = getLatestBlockNumFromDB()
+        lost = getLostBlocks(start, latest_block_num)
+        if (lost == False):
+            start = latest_block_num
             print("no lost block\n")
             time.sleep(sleep_time)
             continue
-        length = len(lost['lost'])
+        length = len(lost)
         if (length == 0):
-            start = lost['latest_block_num']
+            start = latest_block_num
             print("length is 0, no lost block\n")
             time.sleep(sleep_time)
             continue
-        r = [lost['lost'][i:i+step] for i in range(0, length, step)]
+        r = [lost[i:i+step] for i in range(0, length, step)]
         for blocks in r:
             worker(blocks)
-        start = lost['latest_block_num']
+        start = latest_block_num
         print("new start: %d\n\n" % (start))
         time.sleep(sleep_time)
 

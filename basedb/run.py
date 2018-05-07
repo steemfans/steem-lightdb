@@ -92,7 +92,7 @@ def worker(start, end):
             tmp_block_info,
             timestamp
         )
-        print('[insert_data]:', insert_data)
+        # print('[insert_data]:', insert_data)
         with conn.cursor() as cursor:
             try:
                 sql = '''
@@ -115,7 +115,7 @@ def worker(start, end):
         for trans in transactions:
             tmp_trans.append((block_record_id, json.dumps(trans), block_num))
         if tmp_trans != []:
-            print('[insert_transactions]', tmp_trans)
+            # print('[insert_transactions]', tmp_trans)
             with conn.cursor() as cursor:
                 try:
                     cursor.executemany(
