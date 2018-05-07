@@ -141,7 +141,7 @@ def getLatestBlockNumFromDB():
 def getLostBlocks(start):
     latest_block_num = getLatestBlockNumFromDB()
     if latest_block_num <= 1:
-        return False
+        return {"lost": False, "latest_block_num": latest_block_num}
     else:
         all_list = range(start, latest_block_num)
         print("block nums from %d to %d\n" % (start, latest_block_num))
@@ -173,13 +173,15 @@ def run():
 
     while True:
         lost = getLostBlocks(start)
-        if (lost == False):
+        if (lost['lost'] == False):
+            start = lost['latest_block_num']
             print("no lost block\n")
             time.sleep(sleep_time)
             continue
         length = len(lost['lost'])
         if (length == 0):
-            print("no lost block\n")
+            start = lost['latest_block_num']
+            print("length is 0, no lost block\n")
             time.sleep(sleep_time)
             continue
         r = [lost['lost'][i:i+step] for i in range(0, length, step)]
