@@ -41,6 +41,7 @@ try:
         database = DB_NAME,
         charset = 'utf8',
         cursorclass = pymysql.cursors.DictCursor)
+    conn.autocommit(True)
 except Exception as e:
     print('[warning] DB connection failed', e)
     sys.exit()
