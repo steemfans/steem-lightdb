@@ -1,2 +1,4 @@
 vendor/
-devTools/*.txt
+devTools/data
+devTools/data/*.txt
+!devTools/data/.gitkeep
