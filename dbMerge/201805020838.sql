@@ -16,7 +16,7 @@ CREATE TABLE `blocks` (
   `block_num` bigint(11) NOT NULL,
   `previous` varchar(40) NOT NULL DEFAULT '',
   `block_id` varchar(40) NOT NULL DEFAULT '',
-  `block_info` mediumtext NOT NULL,
+  `block_info` text NOT NULL,
   `timestamp` varchar(19) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   UNIQUE KEY `block_num` (`block_num`),
@@ -29,7 +29,7 @@ DROP TABLE IF EXISTS `transactions`;
 CREATE TABLE `transactions` (
   `id` bigint(18) unsigned NOT NULL AUTO_INCREMENT,
   `block_id` bigint(11) NOT NULL,
-  `content` longtext NOT NULL,
+  `content` mediumtext NOT NULL,
   `block_num` bigint(11) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `block_id` (`block_id`),
