@@ -12,7 +12,7 @@ class PostsVotes
     /**
      * @ORM\Id()
      * @ORM\GeneratedValue()
-     * @ORM\Column(type="integer")
+     * @ORM\Column(type="bigint", options={"unsigned"=true})
      */
     private $id;
 
@@ -29,7 +29,7 @@ class PostsVotes
     private $user;
 
     /**
-     * @ORM\Column(type="integer")
+     * @ORM\Column(type="smallint", length=6)
      */
     private $weight;
 

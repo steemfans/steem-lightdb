@@ -14,7 +14,7 @@ class Posts
     /**
      * @ORM\Id()
      * @ORM\GeneratedValue()
-     * @ORM\Column(type="bigint")
+     * @ORM\Column(type="bigint", options={"unsigned"=true})
      */
     private $id;
 
@@ -31,12 +31,12 @@ class Posts
     private $author;
 
     /**
-     * @ORM\Column(type="text")
+     * @ORM\Column(type="string", length=500)
      */
     private $permlink;
 
     /**
-     * @ORM\Column(type="text", nullable=true)
+     * @ORM\Column(type="string", length=500, nullable=true)
      */
     private $title;
 

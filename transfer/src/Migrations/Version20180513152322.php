@@ -8,21 +8,20 @@ use Doctrine\DBAL\Schema\Schema;
 /**
  * Auto-generated Migration: Please modify to your needs!
  */
-final class Version20180511172153 extends AbstractMigration
+final class Version20180513152322 extends AbstractMigration
 {
     public function up(Schema $schema) : void
     {
         // this up() migration is auto-generated, please modify it to your needs
         $this->abortIf($this->connection->getDatabasePlatform()->getName() !== 'mysql', 'Migration can only be executed safely on \'mysql\'.');
 
-        $this->addSql('CREATE TABLE logs (id BIGINT AUTO_INCREMENT NOT NULL, which_table VARCHAR(255) NOT NULL, which_id BIGINT NOT NULL, block_num BIGINT NOT NULL, transaction_id VARCHAR(40) NOT NULL, operation_index INT NOT NULL, PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB');
-        $this->addSql('CREATE TABLE comments (id BIGINT AUTO_INCREMENT NOT NULL, parent_id BIGINT DEFAULT NULL, permlink LONGTEXT NOT NULL, title LONGTEXT DEFAULT NULL, body LONGTEXT NOT NULL, json_metadata JSON DEFAULT NULL, INDEX IDX_5F9E962A727ACA70 (parent_id), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB');
-        $this->addSql('CREATE TABLE users (id BIGINT AUTO_INCREMENT NOT NULL, username VARCHAR(255) NOT NULL, json_metadata JSON NOT NULL, PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB');
-        $this->addSql('CREATE TABLE user_relations (follower_id BIGINT NOT NULL, following_id BIGINT NOT NULL, INDEX IDX_148C329CAC24F853 (follower_id), INDEX IDX_148C329C1816E3A3 (following_id), PRIMARY KEY(follower_id, following_id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB');
-        $this->addSql('CREATE TABLE tags (id INT AUTO_INCREMENT NOT NULL, tag_name VARCHAR(255) NOT NULL, PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB');
-        $this->addSql('CREATE TABLE posts_votes (id INT AUTO_INCREMENT NOT NULL, post_id BIGINT NOT NULL, user_id BIGINT NOT NULL, weight INT NOT NULL, updown TINYINT(1) NOT NULL, INDEX IDX_E38C21DE4B89032C (post_id), INDEX IDX_E38C21DEA76ED395 (user_id), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB');
-        $this->addSql('CREATE TABLE posts (id BIGINT AUTO_INCREMENT NOT NULL, main_tag_id INT NOT NULL, author_id BIGINT NOT NULL, permlink LONGTEXT NOT NULL, title LONGTEXT DEFAULT NULL, body LONGTEXT NOT NULL, json_metadata JSON NOT NULL, INDEX IDX_885DBAFA25CEDB07 (main_tag_id), INDEX IDX_885DBAFAF675F31B (author_id), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB');
-        $this->addSql('CREATE TABLE posts_tags (posts_id BIGINT NOT NULL, tags_id INT NOT NULL, INDEX IDX_D5ECAD9FD5E258C5 (posts_id), INDEX IDX_D5ECAD9F8D7B4FB4 (tags_id), PRIMARY KEY(posts_id, tags_id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB');
+        $this->addSql('CREATE TABLE comments (id BIGINT UNSIGNED AUTO_INCREMENT NOT NULL, parent_id BIGINT UNSIGNED DEFAULT NULL, permlink VARCHAR(500) NOT NULL, title VARCHAR(500) DEFAULT NULL, body LONGTEXT NOT NULL, json_metadata JSON DEFAULT NULL, INDEX IDX_5F9E962A727ACA70 (parent_id), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB');
+        $this->addSql('CREATE TABLE users (id BIGINT UNSIGNED AUTO_INCREMENT NOT NULL, username VARCHAR(255) NOT NULL, json_metadata JSON NOT NULL, PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB');
+        $this->addSql('CREATE TABLE user_relations (follower_id BIGINT UNSIGNED NOT NULL, following_id BIGINT UNSIGNED NOT NULL, INDEX IDX_148C329CAC24F853 (follower_id), INDEX IDX_148C329C1816E3A3 (following_id), PRIMARY KEY(follower_id, following_id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB');
+        $this->addSql('CREATE TABLE tags (id INT UNSIGNED AUTO_INCREMENT NOT NULL, tag_name VARCHAR(255) NOT NULL, PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB');
+        $this->addSql('CREATE TABLE posts_votes (id BIGINT UNSIGNED AUTO_INCREMENT NOT NULL, post_id BIGINT UNSIGNED NOT NULL, user_id BIGINT UNSIGNED NOT NULL, weight SMALLINT NOT NULL, updown TINYINT(1) NOT NULL, INDEX IDX_E38C21DE4B89032C (post_id), INDEX IDX_E38C21DEA76ED395 (user_id), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB');
+        $this->addSql('CREATE TABLE posts (id BIGINT UNSIGNED AUTO_INCREMENT NOT NULL, main_tag_id INT UNSIGNED NOT NULL, author_id BIGINT UNSIGNED NOT NULL, permlink VARCHAR(500) NOT NULL, title VARCHAR(500) DEFAULT NULL, body LONGTEXT NOT NULL, json_metadata JSON NOT NULL, INDEX IDX_885DBAFA25CEDB07 (main_tag_id), INDEX IDX_885DBAFAF675F31B (author_id), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB');
+        $this->addSql('CREATE TABLE posts_tags (posts_id BIGINT UNSIGNED NOT NULL, tags_id INT UNSIGNED NOT NULL, INDEX IDX_D5ECAD9FD5E258C5 (posts_id), INDEX IDX_D5ECAD9F8D7B4FB4 (tags_id), PRIMARY KEY(posts_id, tags_id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB');
         $this->addSql('ALTER TABLE comments ADD CONSTRAINT FK_5F9E962A727ACA70 FOREIGN KEY (parent_id) REFERENCES comments (id)');
         $this->addSql('ALTER TABLE user_relations ADD CONSTRAINT FK_148C329CAC24F853 FOREIGN KEY (follower_id) REFERENCES users (id)');
         $this->addSql('ALTER TABLE user_relations ADD CONSTRAINT FK_148C329C1816E3A3 FOREIGN KEY (following_id) REFERENCES users (id)');
@@ -48,7 +47,6 @@ final class Version20180511172153 extends AbstractMigration
         $this->addSql('ALTER TABLE posts_tags DROP FOREIGN KEY FK_D5ECAD9F8D7B4FB4');
         $this->addSql('ALTER TABLE posts_votes DROP FOREIGN KEY FK_E38C21DE4B89032C');
         $this->addSql('ALTER TABLE posts_tags DROP FOREIGN KEY FK_D5ECAD9FD5E258C5');
-        $this->addSql('DROP TABLE logs');
         $this->addSql('DROP TABLE comments');
         $this->addSql('DROP TABLE users');
         $this->addSql('DROP TABLE user_relations');
