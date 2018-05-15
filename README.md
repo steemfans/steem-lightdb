@@ -62,7 +62,7 @@ because of the unstable network. So we need to run another script
 to keep the data same as the Blockchain.
 
 ```
-$ docker run -it -d --name steem-lightdb-base-fill-db -e DB_HOST=172.19.0.2 -e DB_NAME=steemdb -e DB_USER=root -e DB_PASS=123456 --restart always --network lightdb --ip "172.19.0.4" ety001/steem-lightdb-base:latest
+$ docker run -it -d --name steem-lightdb-base-fill-db -e DB_HOST=172.19.0.2 -e DB_NAME=steemdb -e DB_USER=root -e DB_PASS=123456 --restart always --network lightdb --ip "172.19.0.4" ety001/steem-lightdb-base:latest /app/fill.py
 ```
 
 (Unfinished...)
