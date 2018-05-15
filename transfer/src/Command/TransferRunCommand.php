@@ -110,9 +110,61 @@ class TransferRunCommand extends Command
     }
 
     protected function transferData($data) {
-        var_dump($data);
-        if ($data) {
-            foreach($data as $k => $block) {
+        foreach($data as $k => $block) {
+            $block_num = $block['block_num'];
+            $block_info = $block['block_info'];
+            foreach($block['transactions'] as $kk => $transaction) {
+                if (isset($block_info['transaction_ids'][$kk])) {
+                    $transaction_id = $block_info['transaction_ids'][$kk];
+                } else {
+                    $transaction_id = $kk;
+                }
+                foreach($transaction['content']['operations'] as $kkk => $operation) {
+                    $operation_index = $kkk;
+                    var_dump($block_num.' : '.$transaction_id.' : '.$operation[0]);
+                    switch($operation[0]) {
+                        case 'pow':
+                            break;
+                        case 'comment':
+                            break;
+                        case 'comment_options':
+                            break;
+                        case 'delete_comment':
+                            break;
+                        case 'vote':
+                            break;
+                        case 'custom_json':
+                            break;
+                        case 'account_create':
+                            break;
+                        case 'account_update':
+                            break;
+                        case 'limit_order_cancel':
+                            break;
+                        case 'limit_order_create':
+                            break;
+                        case 'pow2':
+                            break;
+                        case 'transfer':
+                            break;
+                        case 'transfer_from_savings':
+                            break;
+                        case 'transfer_to_savings':
+                            break;
+                        case 'transfer_to_vesting':
+                            break;
+                        case 'convert':
+                            break;
+                        case 'withdraw_vesting':
+                            break;
+                        case 'witness_update':
+                            break;
+                        case 'feed_publish':
+                            break;
+                        case 'account_witness_vote':
+                            break;
+                    }
+                }
             }
         }
     }
