@@ -47,6 +47,29 @@ class Comments
      */
     private $json_metadata;
 
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\Posts")
+     * @ORM\JoinColumn(nullable=false)
+     */
+    private $post;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\Users")
+     * @ORM\JoinColumn(nullable=false)
+     */
+    private $parent_author;
+
+    /**
+     * @ORM\Column(type="string", length=500)
+     */
+    private $parent_permlink;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\Users")
+     * @ORM\JoinColumn(nullable=false)
+     */
+    private $author;
+
     public function getId()
     {
         return $this->id;
@@ -96,6 +119,54 @@ class Comments
     public function setJsonMetadata($json_metadata): self
     {
         $this->json_metadata = $json_metadata;
+
+        return $this;
+    }
+
+    public function getPost(): ?Posts
+    {
+        return $this->post;
+    }
+
+    public function setPost(?Posts $post): self
+    {
+        $this->post = $post;
+
+        return $this;
+    }
+
+    public function getParentAuthor(): ?Users
+    {
+        return $this->parent_author;
+    }
+
+    public function setParentAuthor(?Users $parent_author): self
+    {
+        $this->parent_author = $parent_author;
+
+        return $this;
+    }
+
+    public function getParentPermlink(): ?string
+    {
+        return $this->parent_permlink;
+    }
+
+    public function setParentPermlink(string $parent_permlink): self
+    {
+        $this->parent_permlink = $parent_permlink;
+
+        return $this;
+    }
+
+    public function getAuthor(): ?Users
+    {
+        return $this->author;
+    }
+
+    public function setAuthor(?Users $author): self
+    {
+        $this->author = $author;
 
         return $this;
     }
