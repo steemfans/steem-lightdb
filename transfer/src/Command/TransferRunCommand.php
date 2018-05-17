@@ -9,17 +9,41 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Psr\Log\LoggerInterface;
+use GuzzleHttp\Client;
+
+use App\Service\UserManager;
+use App\Service\CommentManager;
+use App\Service\CustomJsonManager;
+use App\Service\ConfigManager;
 
 class TransferRunCommand extends Command
 {
     protected static $defaultName = 'transfer:run';
     private $conn;
     private $logger;
+    private $discord;
+    private $output;
+    private $em;
+    private $user_manager;
+    private $comment_manager;
+    private $custom_json_manager;
+    private $config_manager;
 
-    public function __construct(LoggerInterface $logger)
+    public function __construct(
+                        LoggerInterface $logger,
+                        UserManager $user_manager,
+                        CommentManager $comment_manager,
+                        CustomJsonManager $custom_json_manager,
+                        ConfigManager $config_manager
+                    )
     {
         parent::__construct();
         $this->logger = $logger;
+        $this->user_manager = $user_manager;
+        $this->comment_manager = $comment_manager;
+        $this->custom_json_manager = $custom_json_manager;
+        $this->config_manager = $config_manager;
+        $this->discord = getenv('DISCORD') ? getenv('DISCORD') : null;
     }
 
     protected function configure()
@@ -27,7 +51,7 @@ class TransferRunCommand extends Command
         $this
             ->setDescription('run the transfer shell')
             // ->addArgument('arg1', InputArgument::OPTIONAL, 'Argument description')
-            ->addOption('start_num', null, InputOption::VALUE_OPTIONAL, 'Start block number', 1)
+            ->addOption('start_num', null, InputOption::VALUE_OPTIONAL, 'Start block number')
             ->addOption('sleep_time', null, InputOption::VALUE_OPTIONAL, 'sleep time', 3)
             ->addOption('step', null, InputOption::VALUE_OPTIONAL, 'step', 100)
         ;
@@ -35,10 +59,22 @@ class TransferRunCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $this->config_manager->setConfig('asd', 'sss');die();
+        $this->output = $output;
+
         $start_num = $input->getOption('start_num');
+        if (!$start_num) {
+            $start_num_stored = $this->config_manager->getConfig('start_num');
+            if ($start_num_stored) {
+                $start_num = (int)$start_num_stored;
+            } else {
+                $start_num = 1;
+            }
+        }
         $sleep_time = $input->getOption('sleep_time');
         $step = $input->getOption('step');
         $debug = getenv('APP_ENV');
+        $test_latest_block_num = getenv('test_latest_block_num');
 
         // connect chain db
         if (!getenv('CHAIN_DB')) {
@@ -53,17 +89,22 @@ class TransferRunCommand extends Command
             exit();
         }
 
-        $output->writeln('<info>StartNum: '.$start_num.'</info>');
-        $this->logger->info('<info>StartNum: '.$start_num.'</info>');
+        $tmp = compact('start_num', 'sleep_time', 'step', 'debug', 'test_latest_block_num');
+        $status_msg = '<info>'.json_encode($tmp).'</info>';
+        $output->writeln($status_msg);
+        $this->logger->info($status_msg);
         // main loop
         $last_block_num = $start_num;
         while (1) {
             if ($debug == 'prod') {
                 $latest_block_num = $this->getLatestBlockNum();
             } else {
-                $latest_block_num = getenv('test_latest_block_num');
+                $latest_block_num = $test_latest_block_num;
                 $latest_block_num = $latest_block_num ? $latest_block_num : 10;
             }
+            $msg = '<info>LatestBlockNum: '.$latest_block_num.'</info>';
+            $output->writeln($msg);
+            $this->logger->info($msg);
 
             if ($latest_block_num && ($latest_block_num - $last_block_num) > 0) {
                 $output->writeln("<info>Get block from {$last_block_num} to {$latest_block_num}");
@@ -72,9 +113,9 @@ class TransferRunCommand extends Command
                 while($tmp_start <= $latest_block_num) {
                     $tmp_end = $tmp_start + $step;
                     if ($tmp_end >= $latest_block_num) {
-                        $tmp_data = $this->getDataFromChain($tmp_start, $latest_block_num+1, $output);
+                        $tmp_data = $this->getDataFromChain($tmp_start, $latest_block_num+1);
                     } else {
-                        $tmp_data = $this->getDataFromChain($tmp_start, $tmp_end, $output);
+                        $tmp_data = $this->getDataFromChain($tmp_start, $tmp_end);
                     }
                     $tmp_start = $tmp_end;
                     switch ($tmp_data['status']) {
@@ -121,23 +162,34 @@ class TransferRunCommand extends Command
                 }
                 foreach($transaction['content']['operations'] as $kkk => $operation) {
                     $operation_index = $kkk;
-                    var_dump($block_num.' : '.$transaction_id.' : '.$operation[0]);
+                    // var_dump($block_num.' : '.$transaction_id.' : '.$operation[0]);
+                    $op_data = compact(
+                        'block_num',
+                        'transaction_id',
+                        'operation'
+                    );
                     switch($operation[0]) {
                         case 'pow':
                             break;
                         case 'comment':
+                            $this->comment_manager->addOrUpdateComment($op_data);
                             break;
                         case 'comment_options':
                             break;
                         case 'delete_comment':
+                            $this->comment_manager->delComment($op_data);
                             break;
                         case 'vote':
+                            $this->comment_manager->voteComment($op_data);
                             break;
                         case 'custom_json':
+                            $this->custom_json_manager->opProcess($op_data);
                             break;
                         case 'account_create':
+                            $this->user_manager->addUser($op_data);
                             break;
                         case 'account_update':
+                            $this->user_manager->updateUser($op_data);
                             break;
                         case 'limit_order_cancel':
                             break;
@@ -166,6 +218,7 @@ class TransferRunCommand extends Command
                     }
                 }
             }
+            $this->config_manager->setConfig('start_num', $block_num);
         }
     }
     
@@ -178,12 +231,12 @@ class TransferRunCommand extends Command
     /**
      * [$start, $end)
      */
-    protected function getDataFromChain($start, $end, OutputInterface $output)
+    protected function getDataFromChain($start, $end)
     {
         if ($start >= $end) {
             return ['status' => -1];
         }
-        $output->writeln("<info>Will get blocks: [{$start}, {$end})</info>");
+        $this->output->writeln("<info>Will get blocks: [{$start}, {$end})</info>");
         $sql = "select * from blocks where block_num >= {$start} and block_num < {$end} order by block_num asc";
         $sth = $this->conn->prepare($sql);
         $sth->execute();
@@ -260,4 +313,38 @@ class TransferRunCommand extends Command
             return false;
         }
     }
+
+    protected function notifications($type, $msg)
+    {
+        if ($this->discord) {
+            try {
+                $client = new Client();
+                switch ($type) {
+                    case 'warning':
+                        $type = '[warning] ';
+                        break;
+                    case 'error':
+                        $type = '[error] ';
+                        break;
+                    case 'info':
+                        $type = '[info] ';
+                        break;
+                    default:
+                        $type = '';
+                        break;
+                }
+                $r = $client->request('POST', $this->discord, [
+                    'form_params' => [
+                        'content' => $type.$msg,
+                    ],
+                ]);
+                $body = $r->getBody();
+                $result = $body->getContents();
+                $this->output->writeln('send_notify: '.json_encode($result));
+            } catch (Exception $e) {
+                $this->output->writeln('notify_error: '.$e->getMessage());
+            }
+        }
+    }
+
 }
