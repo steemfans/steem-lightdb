@@ -59,7 +59,6 @@ class TransferRunCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $this->config_manager->setConfig('asd', 'sss');die();
         $this->output = $output;
 
         $start_num = $input->getOption('start_num');
