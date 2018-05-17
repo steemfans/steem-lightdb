@@ -47,6 +47,7 @@ class CustomJsonManager
                 $this->user_manager->addFollowing(
                                         $json[1]['follower'],
                                         $json[1]['following'],
+                                        $json[1]['what'][0],
                                         $block_num,
                                         $transaction_id
                                     );

@@ -7,6 +7,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use App\Service\ConfigManager;
 
 use App\Entity\Users;
+use App\Entity\UserRelations;
 
 class UserManager
 {
@@ -107,9 +108,9 @@ class UserManager
         return;
     }
     
-    public function addFollowing($follower, $following, $block_num, $transaction_id)
+    public function addFollowing($follower, $following, $what, $block_num, $transaction_id)
     {
-        $data = compact('follower', 'following', 'block_num', 'transaction_id');
+        $data = compact('follower', 'following', 'what', 'block_num', 'transaction_id');
         $follower_user = $this->em
                                 ->getRepository(Users::class)
                                 ->findOneBy([
@@ -134,10 +135,13 @@ class UserManager
             return;
         }
 
-        $follower_user->addFollowing($following_user);
+        $relation = new UserRelations();
+        $relation->setFollower($follower_user);
+        $relation->setFollowing($following_user);
+        $relation->setWhat($what);
         
         try {
-            $this->em->persist($follower_user);
+            $this->em->persist($relation);
             $this->em->flush();
             $msg = 'add following: '.json_encode($data);
         } catch (\Exception $e) {
