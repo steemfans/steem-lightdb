@@ -29,20 +29,6 @@ class Users
     private $json_metadata;
 
     /**
-     * @ORM\ManyToMany(targetEntity="App\Entity\Users", mappedBy="followings")
-     */
-    private $followers;
-
-    /**
-     * @ORM\ManyToMany(targetEntity="App\Entity\Users", inversedBy="followers")
-     * @ORM\JoinTable(name="user_relations",
-     *      joinColumns={@ORM\JoinColumn(name="follower_id", referencedColumnName="id")},
-     *      inverseJoinColumns={@ORM\JoinColumn(name="following_id", referencedColumnName="id")}
-     *      )
-     */
-    private $followings;
-
-    /**
      * @ORM\OneToMany(targetEntity="App\Entity\Posts", mappedBy="author")
      */
     private $posts;
@@ -59,8 +45,6 @@ class Users
 
     public function __construct()
     {
-        $this->followers = new ArrayCollection();
-        $this->followings = new ArrayCollection();
         $this->posts = new ArrayCollection();
         $this->comments = new ArrayCollection();
         $this->postsVotes = new ArrayCollection();
@@ -91,58 +75,6 @@ class Users
     public function setJsonMetadata($json_metadata): self
     {
         $this->json_metadata = $json_metadata;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection|UserRelations[]
-     */
-    public function getFollowers(): Collection
-    {
-        return $this->followers;
-    }
-
-    public function addFollower(Users $follower): self
-    {
-        if (!$this->followers->contains($follower)) {
-            $this->followers[] = $follower;
-        }
-
-        return $this;
-    }
-
-    public function removeFollower(Users $follower): self
-    {
-        if ($this->followers->contains($follower)) {
-            $this->followers->removeElement($follower);
-        }
-
-        return $this;
-    }
-
-    /**
-     * @return Collection|UserRelations[]
-     */
-    public function getFollowings(): Collection
-    {
-        return $this->followings;
-    }
-
-    public function addFollowing(Users $following): self
-    {
-        if (!$this->followings->contains($following)) {
-            $this->followings[] = $following;
-        }
-
-        return $this;
-    }
-
-    public function removeFollowing(Users $following): self
-    {
-        if ($this->followings->contains($following)) {
-            $this->followings->removeElement($following);
-        }
 
         return $this;
     }
