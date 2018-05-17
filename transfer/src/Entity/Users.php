@@ -43,11 +43,17 @@ class Users
      */
     private $postsVotes;
 
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\UserRelations", mappedBy="follower")
+     */
+    private $userRelations;
+
     public function __construct()
     {
         $this->posts = new ArrayCollection();
         $this->comments = new ArrayCollection();
         $this->postsVotes = new ArrayCollection();
+        $this->userRelations = new ArrayCollection();
     }
 
     public function getId()
@@ -166,6 +172,37 @@ class Users
             // set the owning side to null (unless already changed)
             if ($postsVote->getUser() === $this) {
                 $postsVote->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|UserRelations[]
+     */
+    public function getUserRelations(): Collection
+    {
+        return $this->userRelations;
+    }
+
+    public function addUserRelation(UserRelations $userRelation): self
+    {
+        if (!$this->userRelations->contains($userRelation)) {
+            $this->userRelations[] = $userRelation;
+            $userRelation->setFollower($this);
+        }
+
+        return $this;
+    }
+
+    public function removeUserRelation(UserRelations $userRelation): self
+    {
+        if ($this->userRelations->contains($userRelation)) {
+            $this->userRelations->removeElement($userRelation);
+            // set the owning side to null (unless already changed)
+            if ($userRelation->getFollower() === $this) {
+                $userRelation->setFollower(null);
             }
         }
 
