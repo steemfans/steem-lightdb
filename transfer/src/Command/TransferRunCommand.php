@@ -15,6 +15,7 @@ use App\Service\UserManager;
 use App\Service\CommentManager;
 use App\Service\CustomJsonManager;
 use App\Service\ConfigManager;
+use App\Service\Discord;
 
 class TransferRunCommand extends Command
 {
@@ -34,7 +35,8 @@ class TransferRunCommand extends Command
                         UserManager $user_manager,
                         CommentManager $comment_manager,
                         CustomJsonManager $custom_json_manager,
-                        ConfigManager $config_manager
+                        ConfigManager $config_manager,
+                        Discord $discord
                     )
     {
         parent::__construct();
@@ -43,7 +45,7 @@ class TransferRunCommand extends Command
         $this->comment_manager = $comment_manager;
         $this->custom_json_manager = $custom_json_manager;
         $this->config_manager = $config_manager;
-        $this->discord = getenv('DISCORD') ? getenv('DISCORD') : null;
+        $this->discord = $discord;
     }
 
     protected function configure()
@@ -63,9 +65,9 @@ class TransferRunCommand extends Command
 
         $start_num = $input->getOption('start_num');
         if (!$start_num) {
-            $start_num_stored = $this->config_manager->getConfig('start_num');
+            $start_num_stored = $this->config_manager->getConfig('current_head', false);
             if ($start_num_stored) {
-                $start_num = (int)$start_num_stored;
+                $start_num = (int)$start_num_stored + 1;
             } else {
                 $start_num = 1;
             }
@@ -84,7 +86,9 @@ class TransferRunCommand extends Command
         try {
             $this->conn = new \PDO("{$chain_db[1]}:host={$chain_db[4]};dbname={$chain_db[6]}", $chain_db[2], $chain_db[3]);
         } catch (\Exception $e) {
-            $this->logger->error(sprintf('DB error: %s', $e->getMessage()));
+            $msg = sprintf('DB error: %s', $e->getMessage());
+            $this->logger->error($msg);
+            $this->discord->notify('error', $msg);
             exit();
         }
 
@@ -171,7 +175,7 @@ class TransferRunCommand extends Command
                         case 'pow':
                             break;
                         case 'comment':
-                            $this->comment_manager->addOrUpdateComment($op_data);
+                            $this->comment_manager->handle($op_data);
                             break;
                         case 'comment_options':
                             break;
@@ -182,7 +186,7 @@ class TransferRunCommand extends Command
                             $this->comment_manager->voteComment($op_data);
                             break;
                         case 'custom_json':
-                            $this->custom_json_manager->opProcess($op_data);
+                            $this->custom_json_manager->handle($op_data);
                             break;
                         case 'account_create':
                             $this->user_manager->addUser($op_data);
@@ -217,7 +221,7 @@ class TransferRunCommand extends Command
                     }
                 }
             }
-            $this->config_manager->setConfig('start_num', $block_num);
+            $this->config_manager->setConfig('current_head', $block_num);
         }
     }
     
@@ -310,39 +314,6 @@ class TransferRunCommand extends Command
             return $res[0]['block_num'];
         } else {
             return false;
-        }
-    }
-
-    protected function notifications($type, $msg)
-    {
-        if ($this->discord) {
-            try {
-                $client = new Client();
-                switch ($type) {
-                    case 'warning':
-                        $type = '[warning] ';
-                        break;
-                    case 'error':
-                        $type = '[error] ';
-                        break;
-                    case 'info':
-                        $type = '[info] ';
-                        break;
-                    default:
-                        $type = '';
-                        break;
-                }
-                $r = $client->request('POST', $this->discord, [
-                    'form_params' => [
-                        'content' => $type.$msg,
-                    ],
-                ]);
-                $body = $r->getBody();
-                $result = $body->getContents();
-                $this->output->writeln('send_notify: '.json_encode($result));
-            } catch (Exception $e) {
-                $this->output->writeln('notify_error: '.$e->getMessage());
-            }
         }
     }
 

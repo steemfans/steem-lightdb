@@ -8,6 +8,7 @@ use App\Service\ConfigManager;
 
 use App\Entity\Users;
 use App\Entity\UserRelations;
+use App\Service\Discord;
 
 class UserManager
 {
@@ -18,12 +19,14 @@ class UserManager
     public function __construct(
                         LoggerInterface $logger,
                         EntityManagerInterface $em,
-                        ConfigManager $config_manager
+                        ConfigManager $config_manager,
+                        Discord $discord
                     )
     {
         $this->logger = $logger;
         $this->em = $em;
         $this->config_manager = $config_manager;
+        $this->discord = $discord;
     }
 
     public function addUser($data)
@@ -61,6 +64,7 @@ class UserManager
         } catch (\Exception $e) {
             $msg = 'user_create_error: '.$e->getMessage().", ".json_encode($data);
             $this->logger->error($msg);
+            $this->discord->notify('error', $msg);
         }
         echo $msg."\n";
     }
@@ -103,6 +107,7 @@ class UserManager
         } catch (\Exception $e) {
             $msg = '[error]user_update: '.$e->getMessage().json_encode($data);
             $this->logger->error($msg);
+            $this->discord->notify('error', $msg);
         }
         echo $msg."\n";
         return;
@@ -147,6 +152,7 @@ class UserManager
         } catch (\Exception $e) {
             $msg = 'add following failed: '.$e->getMessage().', '.json_encode($data);
             $this->logger->error($msg);
+            $this->discord->notify('error', $msg);
             echo $msg."\n";
         }
 

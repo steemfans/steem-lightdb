@@ -392,6 +392,9 @@
     "webmozart/assert": {
         "version": "1.3.0"
     },
+    "yetanotherape/diff-match-patch": {
+        "version": "v1.0.1"
+    },
     "zendframework/zend-code": {
         "version": "3.3.0"
     },
