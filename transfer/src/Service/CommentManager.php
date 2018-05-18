@@ -11,6 +11,7 @@ use App\Entity\Tags;
 use App\Entity\Posts;
 use App\Entity\Comments;
 use App\Entity\PostsVotes;
+use App\Entity\CommentsVotes;
 
 use DiffMatchPatch\DiffMatchPatch;
 use App\Service\Discord;
