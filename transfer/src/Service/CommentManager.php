@@ -39,7 +39,7 @@ class CommentManager
     {
         extract($data);
         $comment_type = null;
-        if ($operation[1]['parent_authro'] == '') {
+        if ($operation[1]['parent_author'] == '') {
             $comment_type = 'post';
             $this->addOrUpdatePost($data);
         } else {
@@ -102,7 +102,7 @@ class CommentManager
             $this->logger->info($msg);
             echo $msg."\n";
         } catch(\Exception $e) {
-            $msg = 'add_or_update_post: '.json_encode($data);
+            $msg = 'add_or_update_post: '.$e->getMessage().', '.json_encode($data);
             $this->logger->error($msg);
             $this->discord->notify('error', $msg);
             echo $msg."\n";
@@ -181,7 +181,7 @@ class CommentManager
             $this->logger->info($msg);
             echo $msg."\n";
         } catch(\Exception $e) {
-            $msg = 'add_or_update_comment: '.json_encode($data);
+            $msg = 'add_or_update_comment: '.$e->getMessage().', '.json_encode($data);
             $this->logger->error($msg);
             $this->discord->notify('error', $msg);
             echo $msg."\n";
