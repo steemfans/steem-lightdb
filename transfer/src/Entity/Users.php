@@ -56,7 +56,7 @@ class Users
     /**
      * @ORM\Column(type="boolean")
      */
-    private $is_creator;
+    private $is_pow;
 
     public function __construct()
     {
@@ -65,7 +65,7 @@ class Users
         $this->postsVotes = new ArrayCollection();
         $this->userRelations = new ArrayCollection();
         $this->commentsVotes = new ArrayCollection();
-        $this->is_creator = false;
+        $this->is_pow = false;
     }
 
     public function getId()
@@ -252,14 +252,14 @@ class Users
         return $this;
     }
 
-    public function getIsCreator(): ?bool
+    public function getIsPow(): ?bool
     {
-        return $this->is_creator;
+        return $this->is_pow;
     }
 
-    public function setIsCreator(bool $is_creator): self
+    public function setIsPow(bool $is_pow): self
     {
-        $this->is_creator = $is_creator;
+        $this->is_pow = $is_pow;
 
         return $this;
     }

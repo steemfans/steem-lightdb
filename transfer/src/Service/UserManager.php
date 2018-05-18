@@ -33,7 +33,6 @@ class UserManager
     {
         try {
             extract($data);
-            $creator = $this->getCreator($operation[1]['creator']);
             $username = $operation[1]['new_account_name'];
             $json_metadata = $operation[1]['json_metadata'];
             if ($json_metadata != '') {
@@ -68,24 +67,6 @@ class UserManager
             $this->discord->notify('error', $msg);
         }
         echo $msg."\n";
-    }
-
-    public function getCreator($username)
-    {
-        $user = $this->em
-                        ->getRepository(Users::class)
-                        ->findOneBy([
-                            'username' => $username,
-                        ]);
-        if (!$user) {
-            $user = new Users();
-            $user->setUsername($username);
-            $user->setJsonMetadata([]);
-            $user->setIsCreator(true);
-            $this->em->persist($user);
-            $this->em->flush();
-        }
-        return $user;
     }
 
     public function updateUser($data)

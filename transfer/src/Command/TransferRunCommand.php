@@ -15,6 +15,7 @@ use App\Service\UserManager;
 use App\Service\CommentManager;
 use App\Service\CustomJsonManager;
 use App\Service\ConfigManager;
+use App\Service\PowManager;
 use App\Service\Discord;
 
 class TransferRunCommand extends Command
@@ -29,6 +30,7 @@ class TransferRunCommand extends Command
     private $comment_manager;
     private $custom_json_manager;
     private $config_manager;
+    private $pow_manager;
 
     public function __construct(
                         LoggerInterface $logger,
@@ -36,6 +38,7 @@ class TransferRunCommand extends Command
                         CommentManager $comment_manager,
                         CustomJsonManager $custom_json_manager,
                         ConfigManager $config_manager,
+                        PowManager $pow_manager,
                         Discord $discord
                     )
     {
@@ -45,6 +48,7 @@ class TransferRunCommand extends Command
         $this->comment_manager = $comment_manager;
         $this->custom_json_manager = $custom_json_manager;
         $this->config_manager = $config_manager;
+        $this->pow_manager = $pow_manager;
         $this->discord = $discord;
     }
 
@@ -173,6 +177,10 @@ class TransferRunCommand extends Command
                     );
                     switch($operation[0]) {
                         case 'pow':
+                            $this->pow_manager->powHandle($op_data);
+                            break;
+                        case 'pow2':
+                            $this->pow_manager->pow2Handle($op_data);
                             break;
                         case 'comment':
                             $this->comment_manager->handle($op_data);
@@ -197,8 +205,6 @@ class TransferRunCommand extends Command
                         case 'limit_order_cancel':
                             break;
                         case 'limit_order_create':
-                            break;
-                        case 'pow2':
                             break;
                         case 'transfer':
                             break;
