@@ -53,6 +53,11 @@ class Users
      */
     private $commentsVotes;
 
+    /**
+     * @ORM\Column(type="boolean")
+     */
+    private $is_creator;
+
     public function __construct()
     {
         $this->posts = new ArrayCollection();
@@ -60,6 +65,7 @@ class Users
         $this->postsVotes = new ArrayCollection();
         $this->userRelations = new ArrayCollection();
         $this->commentsVotes = new ArrayCollection();
+        $this->is_creator = false;
     }
 
     public function getId()
@@ -242,6 +248,18 @@ class Users
                 $commentsVote->setUser(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getIsCreator(): ?bool
+    {
+        return $this->is_creator;
+    }
+
+    public function setIsCreator(bool $is_creator): self
+    {
+        $this->is_creator = $is_creator;
 
         return $this;
     }
