@@ -80,6 +80,7 @@ class CommentManager
                         $post->addTag($this->getTag($tag_name));
                     }
                 }
+                $msg = 'will add post: '.json_encode($data);
             } else {
                 $dmp = new DiffMatchPatch();
                 try {
@@ -89,9 +90,17 @@ class CommentManager
                 } catch(\Exception $ee) {
                     $post->setBody($body);
                 }
+                $msg = 'will update post: '.json_encode($data);
             }
+            $this->logger->info($msg);
+            echo $msg."\n";
+
             $this->em->persist($post);
             $this->em->flush();
+
+            $msg = 'add or update post success';
+            $this->logger->info($msg);
+            echo $msg."\n";
         } catch(\Exception $e) {
             $msg = 'add_or_update_post: '.json_encode($data);
             $this->logger->error($msg);
@@ -150,6 +159,7 @@ class CommentManager
                 if (!$is_current_comment_parent) {
                     $comment->setParent($parent_comment);
                 }
+                $msg = 'will add comment: '.json_encode($data);
             } else {
                 try {
                     $dmp = new DiffMatchPatch();
@@ -159,9 +169,17 @@ class CommentManager
                 } catch(\Exception $ee) {
                     $comment->setBody($operation[1]['body']);
                 }
+                $msg = 'will update comment: '.json_encode($data);
             }
+            $this->logger->info($msg);
+            echo $msg."\n";
+
             $this->em->persist($comment);
             $this->em->flush();
+
+            $msg = 'add or update comment success';
+            $this->logger->info($msg);
+            echo $msg."\n";
         } catch(\Exception $e) {
             $msg = 'add_or_update_comment: '.json_encode($data);
             $this->logger->error($msg);
@@ -172,12 +190,88 @@ class CommentManager
 
     public function voteComment($data)
     {
-        var_dump('vote_comment_in_comment_service', $data);
+        extract($data);
+        try {
+            $voter = $this->getAuthor($operation[1]['voter']);
+            $author = $this->getAuthor($operation[1]['author']);
+            if (!$voter || !$author)
+                throw new \Exception('voter not exist or author not exist');
+            $permlink = $operation[1]['permlink'];
+            $weight = $operation[1]['weight'];
+            $post = $this->getPost($author, $permlink);
+            if ($post) {
+                $post_vote = new PostsVotes();
+                $post_vote->setPost($post);
+                $post_vote->setUser($voter);
+                if ($weight >= 0) {
+                    $post_vote->setWeight($weight);
+                    $post_vote->setUpdown(true);
+                } else {
+                    $post_vote->setWeight(-1 * $weight);
+                    $post_vote->setUpdown(false);
+                }
+                $this->em->persist($post_vote);
+                $this->em->flush();
+                $msg = 'vote post success: '.json_encode($data);
+            } else {
+                $comment = $this->getComment($author, $permlink);
+                if ($comment) {
+                    $comment_vote = new CommentsVotes();
+                    $comment_vote->setComment($comment);
+                    $comment_vote->setUser($voter);
+                    if ($weight >= 0) {
+                        $comment_vote->setWeight($weight);
+                        $comment_vote->setUpdown(true);
+                    } else {
+                        $comment_vote->setWeight(-1 * $weight);
+                        $comment_vote->setUpdown(false);
+                    }
+                    $this->em->persist($comment_vote);
+                    $this->em->flush();
+                    $msg = 'vote post success: '.json_encode($data);
+                } else {
+                    throw new \Exception('no post and no comment');
+                }
+            }
+            $this->logger->info($msg);
+            echo $msg."\n";
+        } catch (\Exception $e) {
+            $msg = 'vote_error: '.$e->getMessage().', '.json_encode($data);
+            $this->logger->error($msg);
+            $this->discord->notify('error', $msg);
+            echo $msg."\n";
+        }
     }
 
     public function delComment($data)
     {
-        var_dump('del_comment_in_comment_service', $data);
+        extract($data);
+        try {
+            $author = $this->getAuthor($operation[1]['author']);
+            if (!$author)
+                throw new \Exception('author not exist');
+            $permlink = $operation[1]['permlink'];
+            $post = $this->getPost($author, $permlink);
+            if ($post) {
+                $this->em->remove($post);
+                $this->em->flush();
+                $msg = 'del post success: '.json_encode($data);
+            } else {
+                $comment = $this->getComment($author, $permlink);
+                if (!$comment)
+                    throw new \Exception('cannot find post or comment');
+                $this->em->remove($comment);
+                $this->em->flush();
+                $msg = 'del comment success: '.json_encode($data);
+            }
+            $this->logger->info($msg);
+            echo $msg."\n";
+        } catch(\Exception $e) {
+            $msg = 'del_post_or_comment_failed: '.$e->getMessage().', '.json_encode($data);
+            $this->logger->error($msg);
+            $this->discord->notify('error', $msg);
+            echo $msg."\n";
+        }
     }
 
     public function getTag($tag_name)
