@@ -72,9 +72,15 @@ class Comments
      */
     private $author;
 
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\CommentsVotes", mappedBy="comment")
+     */
+    private $commentsVotes;
+
     public function __construct()
     {
         $this->children = new ArrayCollection();
+        $this->commentsVotes = new ArrayCollection();
     }
 
     public function getId()
@@ -217,6 +223,37 @@ class Comments
     public function setParent(?self $parent): self
     {
         $this->parent = $parent;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|CommentsVotes[]
+     */
+    public function getCommentsVotes(): Collection
+    {
+        return $this->commentsVotes;
+    }
+
+    public function addCommentsVote(CommentsVotes $commentsVote): self
+    {
+        if (!$this->commentsVotes->contains($commentsVote)) {
+            $this->commentsVotes[] = $commentsVote;
+            $commentsVote->setComment($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCommentsVote(CommentsVotes $commentsVote): self
+    {
+        if ($this->commentsVotes->contains($commentsVote)) {
+            $this->commentsVotes->removeElement($commentsVote);
+            // set the owning side to null (unless already changed)
+            if ($commentsVote->getComment() === $this) {
+                $commentsVote->setComment(null);
+            }
+        }
 
         return $this;
     }

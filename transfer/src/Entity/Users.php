@@ -48,12 +48,18 @@ class Users
      */
     private $userRelations;
 
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\CommentsVotes", mappedBy="user")
+     */
+    private $commentsVotes;
+
     public function __construct()
     {
         $this->posts = new ArrayCollection();
         $this->comments = new ArrayCollection();
         $this->postsVotes = new ArrayCollection();
         $this->userRelations = new ArrayCollection();
+        $this->commentsVotes = new ArrayCollection();
     }
 
     public function getId()
@@ -203,6 +209,37 @@ class Users
             // set the owning side to null (unless already changed)
             if ($userRelation->getFollower() === $this) {
                 $userRelation->setFollower(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|CommentsVotes[]
+     */
+    public function getCommentsVotes(): Collection
+    {
+        return $this->commentsVotes;
+    }
+
+    public function addCommentsVote(CommentsVotes $commentsVote): self
+    {
+        if (!$this->commentsVotes->contains($commentsVote)) {
+            $this->commentsVotes[] = $commentsVote;
+            $commentsVote->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCommentsVote(CommentsVotes $commentsVote): self
+    {
+        if ($this->commentsVotes->contains($commentsVote)) {
+            $this->commentsVotes->removeElement($commentsVote);
+            // set the owning side to null (unless already changed)
+            if ($commentsVote->getUser() === $this) {
+                $commentsVote->setUser(null);
             }
         }
 
