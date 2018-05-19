@@ -58,6 +58,16 @@ class Users
      */
     private $is_pow;
 
+    /**
+     * @ORM\Column(type="integer", nullable=true)
+     */
+    private $created_at;
+
+    /**
+     * @ORM\Column(type="integer", nullable=true)
+     */
+    private $updated_at;
+
     public function __construct()
     {
         $this->posts = new ArrayCollection();
@@ -260,6 +270,30 @@ class Users
     public function setIsPow(bool $is_pow): self
     {
         $this->is_pow = $is_pow;
+
+        return $this;
+    }
+
+    public function getCreatedAt(): ?int
+    {
+        return $this->created_at;
+    }
+
+    public function setCreatedAt(?int $created_at): self
+    {
+        $this->created_at = $created_at;
+
+        return $this;
+    }
+
+    public function getUpdatedAt(): ?int
+    {
+        return $this->updated_at;
+    }
+
+    public function setUpdatedAt(?int $updated_at): self
+    {
+        $this->updated_at = $updated_at;
 
         return $this;
     }

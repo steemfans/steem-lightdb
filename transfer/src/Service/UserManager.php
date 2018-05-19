@@ -48,6 +48,7 @@ class UserManager
                 $user = new Users();
                 $user->setUsername($username);
                 $user->setJsonMetadata($json_metadata);
+                $user->setCreatedAt($timestamp);
                 $this->em->persist($user);
                 $this->em->flush();
                 $which_table = 'users';
@@ -71,7 +72,6 @@ class UserManager
 
     public function updateUser($data)
     {
-        var_dump('update_user_in_user_service', $data);
         try {
             extract($data);
             $username = $operation[1]['account'];
@@ -88,6 +88,7 @@ class UserManager
                             ]);
             if ($user) {
                 $user->setJsonMetadata($json_metadata);
+                $user->setUpdatedAt($timestamp);
                 $this->em->persist($user);
                 $this->em->flush();
                 $which_table = 'users';
@@ -113,9 +114,9 @@ class UserManager
         return;
     }
     
-    public function addFollowing($follower, $following, $what, $block_num, $transaction_id)
+    public function addFollowing($follower, $following, $what, $block_num, $transaction_id, $timestamp)
     {
-        $data = compact('follower', 'following', 'what', 'block_num', 'transaction_id');
+        $data = compact('follower', 'following', 'what', 'block_num', 'transaction_id', 'timestamp');
         $follower_user = $this->em
                                 ->getRepository(Users::class)
                                 ->findOneBy([
@@ -143,6 +144,7 @@ class UserManager
         $relation = new UserRelations();
         $relation->setFollower($follower_user);
         $relation->setFollowing($following_user);
+        $relation->setCreatedAt($timestamp);
         $relation->setWhat($what);
         
         try {

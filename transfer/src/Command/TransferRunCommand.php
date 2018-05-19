@@ -161,6 +161,7 @@ class TransferRunCommand extends Command
         foreach($data as $k => $block) {
             $block_num = $block['block_num'];
             $block_info = $block['block_info'];
+            $timestamp = strtotime($block['timestamp']);
             foreach($block['transactions'] as $kk => $transaction) {
                 if (isset($block_info['transaction_ids'][$kk])) {
                     $transaction_id = $block_info['transaction_ids'][$kk];
@@ -173,6 +174,7 @@ class TransferRunCommand extends Command
                     $op_data = compact(
                         'block_num',
                         'transaction_id',
+                        'timestamp',
                         'operation'
                     );
                     switch($operation[0]) {

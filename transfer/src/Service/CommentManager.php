@@ -75,6 +75,7 @@ class CommentManager
                 $post->setTitle($title);
                 $post->setBody($body);
                 $post->setJsonMetadata($json_metadata);
+                $post->setCreatedAt($timestamp);
 
                 if (isset($json_metadata['tags']) && is_array($json_metadata['tags'])) {
                     foreach($json_metadata['tags'] as $k => $tag_name) {
@@ -91,6 +92,7 @@ class CommentManager
                 } catch(\Exception $ee) {
                     $post->setBody($body);
                 }
+                $post->setUpdatedAt($timestamp);
                 $msg = 'will update post: '.json_encode($data);
             }
             $this->logger->info($msg);
@@ -159,6 +161,7 @@ class CommentManager
                 if (!$is_current_comment_parent) {
                     $comment->setParent($parent_comment);
                 }
+                $comment->setCreatedAt($timestamp);
                 $msg = 'will add comment: '.json_encode($data);
             } else {
                 try {
@@ -169,6 +172,7 @@ class CommentManager
                 } catch(\Exception $ee) {
                     $comment->setBody($operation[1]['body']);
                 }
+                $comment->setUpdatedAt($timestamp);
                 $msg = 'will update comment: '.json_encode($data);
             }
             $this->logger->info($msg);
@@ -200,35 +204,48 @@ class CommentManager
             $weight = $operation[1]['weight'];
             $post = $this->getPost($author, $permlink);
             if ($post) {
-                $post_vote = new PostsVotes();
-                $post_vote->setPost($post);
-                $post_vote->setUser($voter);
-                if ($weight >= 0) {
+                $post_vote = $this->getPostsVotes($post, $voter);
+                if ($post_vote) {
                     $post_vote->setWeight($weight);
-                    $post_vote->setUpdown(true);
+                    $msg = 'vote post update: '.json_encode($data);
                 } else {
-                    $post_vote->setWeight(-1 * $weight);
-                    $post_vote->setUpdown(false);
+                    $post_vote = new PostsVotes();
+                    $post_vote->setPost($post);
+                    $post_vote->setUser($voter);
+                    if ($weight >= 0) {
+                        $post_vote->setWeight($weight);
+                        $post_vote->setUpdown(true);
+                    } else {
+                        $post_vote->setWeight(-1 * $weight);
+                        $post_vote->setUpdown(false);
+                    }
+                    $post_vote->setCreatedAt($timestamp);
+                    $msg = 'vote post create: '.json_encode($data);
                 }
                 $this->em->persist($post_vote);
                 $this->em->flush();
-                $msg = 'vote post success: '.json_encode($data);
             } else {
                 $comment = $this->getComment($author, $permlink);
                 if ($comment) {
-                    $comment_vote = new CommentsVotes();
-                    $comment_vote->setComment($comment);
-                    $comment_vote->setUser($voter);
-                    if ($weight >= 0) {
+                    $comment_vote = $this->getCommentsVotes($comment, $voter);
+                    if ($comment_vote) {
                         $comment_vote->setWeight($weight);
-                        $comment_vote->setUpdown(true);
+                        $msg = 'vote comment update: '.json_encode($data);
                     } else {
-                        $comment_vote->setWeight(-1 * $weight);
-                        $comment_vote->setUpdown(false);
+                        $comment_vote = new CommentsVotes();
+                        $comment_vote->setComment($comment);
+                        $comment_vote->setUser($voter);
+                        if ($weight >= 0) {
+                            $comment_vote->setWeight($weight);
+                            $comment_vote->setUpdown(true);
+                        } else {
+                            $comment_vote->setWeight(-1 * $weight);
+                            $comment_vote->setUpdown(false);
+                        }
+                        $msg = 'vote comment create: '.json_encode($data);
                     }
                     $this->em->persist($comment_vote);
                     $this->em->flush();
-                    $msg = 'vote post success: '.json_encode($data);
                 } else {
                     throw new \Exception('no post and no comment');
                 }
@@ -253,14 +270,16 @@ class CommentManager
             $permlink = $operation[1]['permlink'];
             $post = $this->getPost($author, $permlink);
             if ($post) {
-                $this->em->remove($post);
+                $post->setIsDel(true);
+                $this->em->persist($post);
                 $this->em->flush();
                 $msg = 'del post success: '.json_encode($data);
             } else {
                 $comment = $this->getComment($author, $permlink);
                 if (!$comment)
                     throw new \Exception('cannot find post or comment');
-                $this->em->remove($comment);
+                $comment->setIsDel(true);
+                $this->em->persist($comment);
                 $this->em->flush();
                 $msg = 'del comment success: '.json_encode($data);
             }
@@ -324,6 +343,26 @@ class CommentManager
                         ->getRepository(Users::class)
                         ->findOneBy([
                             'username' => trim($author_name),
+                        ]);
+    }
+    
+    public function getPostsVotes($post, $voter)
+    {
+        return $this->em
+                        ->getRepository(PostsVotes::class)
+                        ->findOneBy([
+                            'post' => $post,
+                            'user' => $voter,
+                        ]);
+    }
+
+    public function getCommentsVotes($comment, $voter)
+    {
+        return $this->em
+                        ->getRepository(CommentsVotes::class)
+                        ->findOneBy([
+                            'comment' => $comment,
+                            'user' => $voter,
                         ]);
     }
 

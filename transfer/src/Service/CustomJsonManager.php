@@ -30,7 +30,6 @@ class CustomJsonManager
 
     public function handle($data)
     {
-        var_dump('op_process_in_custom_json_service', $data);
         extract($data);
         $operation_type = $operation[1]['id'];
         switch ($operation_type) {
@@ -49,7 +48,8 @@ class CustomJsonManager
                                         $json[1]['following'],
                                         $json[1]['what'][0],
                                         $block_num,
-                                        $transaction_id
+                                        $transaction_id,
+                                        $timestamp
                                     );
                 break;
             default:

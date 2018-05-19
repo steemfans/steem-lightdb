@@ -33,6 +33,11 @@ class UserRelations
      */
     private $what;
 
+    /**
+     * @ORM\Column(type="integer", nullable=true)
+     */
+    private $created_at;
+
     public function getId()
     {
         return $this->id;
@@ -70,6 +75,18 @@ class UserRelations
     public function setWhat(string $what): self
     {
         $this->what = $what;
+
+        return $this;
+    }
+
+    public function getCreatedAt(): ?int
+    {
+        return $this->created_at;
+    }
+
+    public function setCreatedAt(?int $created_at): self
+    {
+        $this->created_at = $created_at;
 
         return $this;
     }

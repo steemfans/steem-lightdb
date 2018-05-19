@@ -36,6 +36,7 @@ class PowManager
                 $user->setUsername($username);
                 $user->setJsonMetadata($json_metadata);
                 $user->setIsPow(true);
+                $user->setCreatedAt($timestamp);
                 $this->em->persist($user);
                 $this->em->flush();
                 $msg = 'pow_user_create_success: '.json_encode($data);
@@ -62,6 +63,7 @@ class PowManager
                 $user->setUsername($username);
                 $user->setJsonMetadata($json_metadata);
                 $user->setIsPow(true);
+                $user->setCreatedAt($timestamp);
                 $this->em->persist($user);
                 $this->em->flush();
                 $msg = 'pow2_user_create_success: '.json_encode($data);
