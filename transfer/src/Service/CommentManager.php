@@ -148,7 +148,6 @@ class CommentManager
             $comment = $this->getComment($author, $permlink);
             if (!$comment) {
                 $comment = new Comments();
-                if ($is_current_comment_parent)
                 $comment->setPermlink($permlink);
                 $comment->setAuthor($author);
                 $comment->setTitle($operation[1]['title']);

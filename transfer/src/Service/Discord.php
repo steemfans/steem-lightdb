@@ -45,9 +45,9 @@ class Discord
                 ]);
                 $body = $r->getBody();
                 $result = $body->getContents();
-                $this->logger->writeln('send_notify: '.json_encode($result));
+                $this->logger->info('send_notify: '.json_encode($result));
             } catch (Exception $e) {
-                $this->logger->writeln('notify_error: '.$e->getMessage());
+                $this->logger->error('notify_error: '.$e->getMessage());
             }
         }
     }
