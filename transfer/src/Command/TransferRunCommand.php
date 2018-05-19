@@ -118,40 +118,48 @@ class TransferRunCommand extends Command
                 $this->logger->info("<info>Get block from {$last_block_num} to {$latest_block_num}");
                 $tmp_start = $last_block_num;
                 while($tmp_start <= $latest_block_num) {
+                    $err = false;
+                    // group getting block task
                     $tmp_end = $tmp_start + $step;
                     if ($tmp_end >= $latest_block_num) {
                         $tmp_data = $this->getDataFromChain($tmp_start, $latest_block_num+1);
+                        $output->writeln("<info>got [{$tmp_start}, {$latest_block_num+1})");
                     } else {
                         $tmp_data = $this->getDataFromChain($tmp_start, $tmp_end);
+                        $output->writeln("<info>got [{$tmp_start}, {$tmp_end})");
                     }
-                    $tmp_start = $tmp_end;
                     switch ($tmp_data['status']) {
                         case 1:
                             $this->transferData($tmp_data['data']);
                             break;
                         case -1:
                             $this->logger->error('[error]get blocks: start > end');
-                            exit();
+                            $err = true;
                             break;
                         case -2:
                             $this->logger->error('[error]get blocks: length error');
-                            exit();
+                            $err = true;
                             break;
                         case -3:
                             $this->logger->error('[error]get blocks: block data wrong', $tmp_data['data']);
-                            exit();
+                            $err = true;
                             break;
                         default:
                             $this->logger->error('undefined status');
-                            exit();
+                            $err = true;
                             break;
                     }
+                    if ($err) {
+                        break;
+                    }
+                    $tmp_start = $tmp_end;
                 }
             }
             if ($debug != 'prod') {
                 $output->writeln('<info>Not Prod ENV</info>');
                 exit();
             } else {
+                $last_block_num = $latest_block_num;
                 sleep($sleep_time);
             }
         }
