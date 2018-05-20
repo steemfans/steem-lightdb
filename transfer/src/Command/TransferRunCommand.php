@@ -50,6 +50,8 @@ class TransferRunCommand extends Command
         $this->config_manager = $config_manager;
         $this->pow_manager = $pow_manager;
         $this->discord = $discord;
+        pcntl_signal(SIGTERM, array($this, 'handle'));
+        pcntl_signal(SIGINT, array($this, 'handle'));
     }
 
     protected function configure()
@@ -160,6 +162,7 @@ class TransferRunCommand extends Command
                 exit();
             } else {
                 $last_block_num = $latest_block_num;
+                pcntl_signal_dispatch();
                 sleep($sleep_time);
             }
         }
@@ -238,6 +241,7 @@ class TransferRunCommand extends Command
                 }
             }
             $this->config_manager->setConfig('current_head', $block_num);
+            pcntl_signal_dispatch();
         }
     }
     
@@ -331,6 +335,15 @@ class TransferRunCommand extends Command
         } else {
             return false;
         }
+    }
+
+    public function handle($signo)
+    {
+        $msg = 'exit success: '.$signo;
+        $this->logger->info($msg);
+        $this->discord->notify('info', $msg);
+        $this->output->writeln('<info>'.$msg.'</info>');
+        exit();
     }
 
 }
