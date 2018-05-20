@@ -64,6 +64,9 @@ class CommentManager
                 $json_metadata = [];
             } else {
                 $json_metadata = json_decode($operation[1]['json_metadata'], true);
+                if ($json_metadata == null) {
+                    $json_metadata = [];
+                }
             }
 
             $post = $this->getPost($author, $permlink);
@@ -88,9 +91,12 @@ class CommentManager
                 try {
                     $patches = $dmp->patch_fromText($body);
                     $newBody = $dmp->patch_apply($patches, $post->getBody());
-                    $post->setBody($newBody);
+                    $post->setBody($newBody[0]);
                 } catch(\Exception $ee) {
                     $post->setBody($body);
+                    $tmp_msg = 'diff_match_patch_post_failed: '.json_encode($data);
+                    $this->logger->info($tmp_msg);
+                    $this->discord->notify('error', $tmp_msg);
                 }
                 $post->setUpdatedAt($timestamp);
                 $msg = 'will_update_post: '.json_encode($data);
@@ -128,6 +134,9 @@ class CommentManager
                 $json_metadata = [];
             } else {
                 $json_metadata = json_decode($operation[1]['json_metadata'], true);
+                if ($json_metadata == null) {
+                    $json_metadata = [];
+                }
             }
 
             $parent_comment = $this->getComment($parent_author, $parent_permlink);
@@ -168,9 +177,12 @@ class CommentManager
                     $dmp = new DiffMatchPatch();
                     $patches = $dmp->patch_fromText($operation[1]['body']);
                     $newBody = $dmp->patch_apply($patches, $comment->getBody());
-                    $comment->setBody($newBody);
+                    $comment->setBody($newBody[0]);
                 } catch(\Exception $ee) {
                     $comment->setBody($operation[1]['body']);
+                    $tmp_msg = 'diff_match_patch_comment_failed: '.json_encode($data);
+                    $this->logger->info($tmp_msg);
+                    $this->discord->notify('error', $tmp_msg);
                 }
                 $comment->setUpdatedAt($timestamp);
                 $msg = 'will_update_comment: '.json_encode($data);
@@ -207,7 +219,7 @@ class CommentManager
                 $post_vote = $this->getPostsVotes($post, $voter);
                 if ($post_vote) {
                     $post_vote->setWeight($weight);
-                    $msg = 'vote post update: '.json_encode($data);
+                    $msg = 'vote_post_update: '.json_encode($data);
                 } else {
                     $post_vote = new PostsVotes();
                     $post_vote->setPost($post);
@@ -220,7 +232,7 @@ class CommentManager
                         $post_vote->setUpdown(false);
                     }
                     $post_vote->setCreatedAt($timestamp);
-                    $msg = 'vote post create: '.json_encode($data);
+                    $msg = 'vote_post_create: '.json_encode($data);
                 }
                 $this->em->persist($post_vote);
                 $this->em->flush();
