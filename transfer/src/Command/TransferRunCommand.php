@@ -123,7 +123,7 @@ class TransferRunCommand extends Command
                     $tmp_end = $tmp_start + $step;
                     if ($tmp_end >= $latest_block_num) {
                         $tmp_data = $this->getDataFromChain($tmp_start, $latest_block_num+1);
-                        $output->writeln("<info>got [{$tmp_start}, {$latest_block_num+1})");
+                        $output->writeln("<info>got [{$tmp_start}, ".($latest_block_num+1).")");
                     } else {
                         $tmp_data = $this->getDataFromChain($tmp_start, $tmp_end);
                         $output->writeln("<info>got [{$tmp_start}, {$tmp_end})");

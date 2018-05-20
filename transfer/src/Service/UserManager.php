@@ -123,7 +123,7 @@ class UserManager
                                     'username' => $follower,
                                 ]);
         if (!$follower_user) {
-            $msg = '[error]follower not exist: '.json_encode($data);
+            $msg = '[error]follower_not_exist: '.json_encode($data);
             echo $msg."\n";
             $this->logger->error($msg);
             return;
@@ -135,7 +135,7 @@ class UserManager
                                     'username' => $following,
                                 ]);
         if (!$following_user) {
-            $msg = '[error]following not exist: '.json_encode($data);
+            $msg = '[error]following_not_exist: '.json_encode($data);
             $this->logger->error($msg);
             echo $msg."\n";
             return;
@@ -150,9 +150,9 @@ class UserManager
         try {
             $this->em->persist($relation);
             $this->em->flush();
-            $msg = 'add following: '.json_encode($data);
+            $msg = 'add_following: '.json_encode($data);
         } catch (\Exception $e) {
-            $msg = 'add following failed: '.$e->getMessage().', '.json_encode($data);
+            $msg = 'add_following_failed: '.$e->getMessage().', '.json_encode($data);
             $this->logger->error($msg);
             $this->discord->notify('error', $msg);
             echo $msg."\n";

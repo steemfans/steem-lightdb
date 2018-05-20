@@ -82,7 +82,7 @@ class CommentManager
                         $post->addTag($this->getTag($tag_name));
                     }
                 }
-                $msg = 'will add post: '.json_encode($data);
+                $msg = 'will_add_post: '.json_encode($data);
             } else {
                 $dmp = new DiffMatchPatch();
                 try {
@@ -93,7 +93,7 @@ class CommentManager
                     $post->setBody($body);
                 }
                 $post->setUpdatedAt($timestamp);
-                $msg = 'will update post: '.json_encode($data);
+                $msg = 'will_update_post: '.json_encode($data);
             }
             $this->logger->info($msg);
             echo $msg."\n";
@@ -101,7 +101,7 @@ class CommentManager
             $this->em->persist($post);
             $this->em->flush();
 
-            $msg = 'add or update post success';
+            $msg = 'add_or_update_post_success';
             $this->logger->info($msg);
             echo $msg."\n";
         } catch(\Exception $e) {
@@ -162,7 +162,7 @@ class CommentManager
                     $comment->setParent($parent_comment);
                 }
                 $comment->setCreatedAt($timestamp);
-                $msg = 'will add comment: '.json_encode($data);
+                $msg = 'will_add_comment: '.json_encode($data);
             } else {
                 try {
                     $dmp = new DiffMatchPatch();
@@ -173,7 +173,7 @@ class CommentManager
                     $comment->setBody($operation[1]['body']);
                 }
                 $comment->setUpdatedAt($timestamp);
-                $msg = 'will update comment: '.json_encode($data);
+                $msg = 'will_update_comment: '.json_encode($data);
             }
             $this->logger->info($msg);
             echo $msg."\n";
@@ -181,7 +181,7 @@ class CommentManager
             $this->em->persist($comment);
             $this->em->flush();
 
-            $msg = 'add or update comment success';
+            $msg = 'add_or_update_comment_success';
             $this->logger->info($msg);
             echo $msg."\n";
         } catch(\Exception $e) {
@@ -199,7 +199,7 @@ class CommentManager
             $voter = $this->getAuthor($operation[1]['voter']);
             $author = $this->getAuthor($operation[1]['author']);
             if (!$voter || !$author)
-                throw new \Exception('voter not exist or author not exist');
+                throw new \Exception('voter_not_exist_or_author_not_exist');
             $permlink = $operation[1]['permlink'];
             $weight = $operation[1]['weight'];
             $post = $this->getPost($author, $permlink);
@@ -230,7 +230,7 @@ class CommentManager
                     $comment_vote = $this->getCommentsVotes($comment, $voter);
                     if ($comment_vote) {
                         $comment_vote->setWeight($weight);
-                        $msg = 'vote comment update: '.json_encode($data);
+                        $msg = 'vote_comment_update: '.json_encode($data);
                     } else {
                         $comment_vote = new CommentsVotes();
                         $comment_vote->setComment($comment);
@@ -242,12 +242,12 @@ class CommentManager
                             $comment_vote->setWeight(-1 * $weight);
                             $comment_vote->setUpdown(false);
                         }
-                        $msg = 'vote comment create: '.json_encode($data);
+                        $msg = 'vote_comment_create: '.json_encode($data);
                     }
                     $this->em->persist($comment_vote);
                     $this->em->flush();
                 } else {
-                    throw new \Exception('no post and no comment');
+                    throw new \Exception('no_post_and_no_comment');
                 }
             }
             $this->logger->info($msg);
@@ -266,22 +266,22 @@ class CommentManager
         try {
             $author = $this->getAuthor($operation[1]['author']);
             if (!$author)
-                throw new \Exception('author not exist');
+                throw new \Exception('author_not_exist');
             $permlink = $operation[1]['permlink'];
             $post = $this->getPost($author, $permlink);
             if ($post) {
                 $post->setIsDel(true);
                 $this->em->persist($post);
                 $this->em->flush();
-                $msg = 'del post success: '.json_encode($data);
+                $msg = 'del_post_success: '.json_encode($data);
             } else {
                 $comment = $this->getComment($author, $permlink);
                 if (!$comment)
-                    throw new \Exception('cannot find post or comment');
+                    throw new \Exception('cannot_find_post_or_comment');
                 $comment->setIsDel(true);
                 $this->em->persist($comment);
                 $this->em->flush();
-                $msg = 'del comment success: '.json_encode($data);
+                $msg = 'del_comment_success: '.json_encode($data);
             }
             $this->logger->info($msg);
             echo $msg."\n";
