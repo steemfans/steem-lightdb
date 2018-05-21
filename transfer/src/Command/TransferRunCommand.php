@@ -314,7 +314,7 @@ class TransferRunCommand extends Command
         $sth = $this->conn->prepare($sql);
         $sth->execute();
         $res = $sth->fetchAll(\PDO::FETCH_ASSOC);
-        if (count($block_num) > 0) {
+        if (count($res) > 0) {
             foreach($res as $k => $v) {
                 $res[$k]['content'] = json_decode($v['content'], true);
             }
