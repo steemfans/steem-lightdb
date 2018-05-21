@@ -96,7 +96,6 @@ class CommentManager
                     $post->setBody($body);
                     $tmp_msg = 'diff_match_patch_post_failed: '.json_encode($data);
                     $this->logger->info($tmp_msg);
-                    $this->discord->notify('error', $tmp_msg);
                 }
                 $post->setUpdatedAt($timestamp);
                 $msg = 'will_update_post: '.json_encode($data);
@@ -182,7 +181,6 @@ class CommentManager
                     $comment->setBody($operation[1]['body']);
                     $tmp_msg = 'diff_match_patch_comment_failed: '.json_encode($data);
                     $this->logger->info($tmp_msg);
-                    $this->discord->notify('error', $tmp_msg);
                 }
                 $comment->setUpdatedAt($timestamp);
                 $msg = 'will_update_comment: '.json_encode($data);
