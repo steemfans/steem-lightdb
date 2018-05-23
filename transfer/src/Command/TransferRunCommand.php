@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Command;
+ini_set('memory_limit', '-1');
 
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
