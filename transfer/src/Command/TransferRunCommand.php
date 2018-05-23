@@ -95,7 +95,7 @@ class TransferRunCommand extends Command
                             "{$chain_db[1]}:host={$chain_db[4]};dbname={$chain_db[6]}",
                             $chain_db[2],
                             $chain_db[3],
-                            array(PDO::ATTR_PERSISTENT => true)
+                            array(\PDO::ATTR_PERSISTENT => true)
                         );
         } catch (\Exception $e) {
             $msg = sprintf('DB error: %s', $e->getMessage());
