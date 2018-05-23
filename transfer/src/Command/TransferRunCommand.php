@@ -85,24 +85,7 @@ class TransferRunCommand extends Command
         $test_latest_block_num = getenv('test_latest_block_num');
 
         // connect chain db
-        if (!getenv('CHAIN_DB')) {
-            $this->logger->error('CHAIN_DB undefined');
-            exit();
-        }
-        $chain_db = $this->parseDBStr(getenv('CHAIN_DB'));
-        try {
-            $this->conn = new \PDO(
-                            "{$chain_db[1]}:host={$chain_db[4]};dbname={$chain_db[6]}",
-                            $chain_db[2],
-                            $chain_db[3],
-                            array(\PDO::ATTR_PERSISTENT => true)
-                        );
-        } catch (\Exception $e) {
-            $msg = sprintf('DB error: %s', $e->getMessage());
-            $this->logger->error($msg);
-            $this->discord->notify('error', $msg);
-            exit();
-        }
+        $this->connChainDB();
 
         $tmp = compact('start_num', 'sleep_time', 'step', 'debug', 'test_latest_block_num');
         $status_msg = '<info>'.json_encode($tmp).'</info>';
@@ -265,6 +248,7 @@ class TransferRunCommand extends Command
         if ($start >= $end) {
             return ['status' => -1];
         }
+        $this->connChainDB();
         $this->output->writeln("<info>Will get blocks: [{$start}, {$end})</info>");
         $sql = "select * from blocks where block_num >= {$start} and block_num < {$end} order by block_num asc";
         $sth = $this->conn->prepare($sql);
@@ -302,6 +286,7 @@ class TransferRunCommand extends Command
         if (!is_array($block_nums) || count($block_nums) == 0) {
             return false;
         }
+        $this->connChainDB();
         $block_nums_str = implode(',', $block_nums);
         $sql = "select * from blocks where block_num in ({$block_nums_str}) order by block_num asc";
         $sth = $this->conn->prepare($sql);
@@ -316,6 +301,7 @@ class TransferRunCommand extends Command
 
     protected function getTransactions($block_num)
     {
+        $this->connChainDB();
         $sql = "select * from transactions where block_num = {$block_num} order by id asc";
         $sth = $this->conn->prepare($sql);
         $sth->execute();
@@ -332,6 +318,7 @@ class TransferRunCommand extends Command
 
     protected function getLatestBlockNum()
     {
+        $this->connChainDB();
         $sql = "select block_num from blocks order by block_num desc limit 1";
         $sth = $this->conn->prepare($sql);
         $sth->execute();
@@ -352,4 +339,44 @@ class TransferRunCommand extends Command
         exit();
     }
 
+    protected function connChainDB()
+    {
+        if ($this->pdoPing()) return;
+        if (!getenv('CHAIN_DB')) {
+            $this->logger->error('CHAIN_DB undefined');
+            exit();
+        }
+        $chain_db = $this->parseDBStr(getenv('CHAIN_DB'));
+        try {
+            $this->conn = new \PDO(
+                            "{$chain_db[1]}:host={$chain_db[4]};dbname={$chain_db[6]}",
+                            $chain_db[2],
+                            $chain_db[3]
+                        );
+        } catch (\Exception $e) {
+            $msg = sprintf('DB error: %s', $e->getMessage());
+            $this->logger->error($msg);
+            $this->discord->notify('error', $msg);
+            exit();
+        }
+    }
+
+    protected function closeChainDB()
+    {
+        if ($this->conn) {
+            $this->conn = null;
+        }
+    }
+
+    protected function pdoPing()
+    {
+        try {
+            $this->conn->getAttribute(\PDO::ATTR_SERVER_INFO);
+        } catch (\PDOException $e) {
+            if(strpos($e->getMessage(), 'MySQL server has gone away')!==false){
+                return false;
+            }
+        }
+        return true;
+    }
 }
