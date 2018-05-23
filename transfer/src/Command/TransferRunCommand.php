@@ -371,7 +371,11 @@ class TransferRunCommand extends Command
     protected function pdoPing()
     {
         try {
-            $this->conn->getAttribute(\PDO::ATTR_SERVER_INFO);
+            if ($this->conn) {
+                $this->conn->getAttribute(\PDO::ATTR_SERVER_INFO);
+            } else {
+                return false;
+            }
         } catch (\PDOException $e) {
             if(strpos($e->getMessage(), 'MySQL server has gone away')!==false){
                 return false;
