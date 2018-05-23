@@ -15,6 +15,9 @@ step = 100
 # get discord webhook
 discord_webhook = env_dist.get('DISCORD')
 
+# get block_num from env
+env_block_num = env_dist.get('BLOCK_NUM')
+
 # init db config
 DB_HOST = env_dist.get('DB_HOST')
 if DB_HOST == None:
@@ -170,8 +173,11 @@ def sendMsg(msg):
         print('discord url not found')
 
 def run():
-    global s, b, sleep_time, step
-    start = 1
+    global s, b, sleep_time, step, env_block_num
+    if env_block_num != None:
+        start = int(env_block_num)
+    else:
+        start = 1
 
     while True:
         latest_block_num = getLatestBlockNumFromDB()
