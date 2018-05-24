@@ -109,11 +109,11 @@ class TransferRunCommand extends Command
             $this->logger->info($msg);
 
             if ($latest_block_num && ($latest_block_num - $last_block_num) > 0) {
-                $begin_time = time();
                 $output->writeln("<info>Get block from {$last_block_num} to {$latest_block_num}");
                 $this->logger->info("<info>Get block from {$last_block_num} to {$latest_block_num}");
                 $tmp_start = $last_block_num;
                 while($tmp_start <= $latest_block_num) {
+                    $begin_time = time();
                     $err = false;
                     // group getting block task
                     $tmp_end = $tmp_start + $step;
@@ -149,11 +149,11 @@ class TransferRunCommand extends Command
                         break;
                     }
                     $tmp_start = $tmp_end;
+
+                    $spent_time = time() - $begin_time;
+                    $output->writeln('<info>Spent Time: '.$spent_time.' s</info>');
+                    $this->logger->info('spent_time: '.$spent_time.' s');
                 }
-                $spent_time = time() - $begin_time;
-                $output->writeln('<info>Spent Time: '.$spent_time.' s</info>');
-                $this->logger->info('spent_time: '.$spent_time.' s');
-                $this->discord->notify('info', 'spent_time: '.$spent_time.' s');
             }
             if ($debug != 'prod') {
                 $output->writeln('<info>Not Prod ENV</info>');
