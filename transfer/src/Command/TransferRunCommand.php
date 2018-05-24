@@ -101,10 +101,15 @@ class TransferRunCommand extends Command
                 $latest_block_num = $latest_block_num ? $latest_block_num : 10;
             }
             $msg = '<info>LatestBlockNum: '.$latest_block_num.'</info>';
+            if (!$latest_block_num) {
+                $this->connChainDB();
+                continue;
+            }
             $output->writeln($msg);
             $this->logger->info($msg);
 
             if ($latest_block_num && ($latest_block_num - $last_block_num) > 0) {
+                $begin_time = time();
                 $output->writeln("<info>Get block from {$last_block_num} to {$latest_block_num}");
                 $this->logger->info("<info>Get block from {$last_block_num} to {$latest_block_num}");
                 $tmp_start = $last_block_num;
@@ -145,6 +150,10 @@ class TransferRunCommand extends Command
                     }
                     $tmp_start = $tmp_end;
                 }
+                $spent_time = time() - $begin_time;
+                $output->writeln('<info>Spent Time: '.$spent_time.' s</info>');
+                $this->logger->info('spent_time: '.$spent_time.' s');
+                $this->discord->notify('info', 'spent_time: '.$spent_time.' s');
             }
             if ($debug != 'prod') {
                 $output->writeln('<info>Not Prod ENV</info>');
@@ -248,7 +257,6 @@ class TransferRunCommand extends Command
         if ($start >= $end) {
             return ['status' => -1];
         }
-        $this->connChainDB();
         $this->output->writeln("<info>Will get blocks: [{$start}, {$end})</info>");
         $sql = "select * from blocks where block_num >= {$start} and block_num < {$end} order by block_num asc";
         $sth = $this->conn->prepare($sql);
@@ -286,7 +294,6 @@ class TransferRunCommand extends Command
         if (!is_array($block_nums) || count($block_nums) == 0) {
             return false;
         }
-        $this->connChainDB();
         $block_nums_str = implode(',', $block_nums);
         $sql = "select * from blocks where block_num in ({$block_nums_str}) order by block_num asc";
         $sth = $this->conn->prepare($sql);
@@ -301,7 +308,6 @@ class TransferRunCommand extends Command
 
     protected function getTransactions($block_num)
     {
-        $this->connChainDB();
         $sql = "select * from transactions where block_num = {$block_num} order by id asc";
         $sth = $this->conn->prepare($sql);
         $sth->execute();
@@ -318,7 +324,6 @@ class TransferRunCommand extends Command
 
     protected function getLatestBlockNum()
     {
-        $this->connChainDB();
         $sql = "select block_num from blocks order by block_num desc limit 1";
         $sth = $this->conn->prepare($sql);
         $sth->execute();
@@ -341,7 +346,6 @@ class TransferRunCommand extends Command
 
     protected function connChainDB()
     {
-        if ($this->pdoPing()) return;
         if (!getenv('CHAIN_DB')) {
             $this->logger->error('CHAIN_DB undefined');
             exit();
