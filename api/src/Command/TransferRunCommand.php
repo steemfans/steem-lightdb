@@ -68,6 +68,7 @@ class TransferRunCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $output->writeln('Has changed to python transfer'."\n");exit();
         $this->output = $output;
 
         $start_num = $input->getOption('start_num');
