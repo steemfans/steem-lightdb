@@ -65,7 +65,10 @@ def get(t):
             block_from = 1
         else:
             block_from = int(res['val']) + 1
-        data = generate_tasks(block_from, curr_head, steem, task_type[t])
+        if block_from > curr_head:
+            return []
+        generate_tasks(block_from, curr_head, steem, task_type[t])
+        data = get(t)
         steemdb.close()
         steem.close()
         return data
@@ -94,7 +97,10 @@ def get(t):
                 block_from = 1
             else:
                 block_from = res['block_num_to'] + 1
-            data = generate_tasks(block_from, curr_head, steem, task_type[t])
+            if block_from > curr_head:
+                return []
+            generate_tasks(block_from, curr_head, steem, task_type[t])
+            data = get(t)
             steemdb.close()
             steem.close()
             return data
