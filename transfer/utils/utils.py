@@ -8,7 +8,7 @@ def get_config():
     env_dist = os.environ
     c['worker'] = int(env_dist.get('WORKER'))
     if c['worker'] == 0:
-        c['worker'] = 5
+        c['worker'] = 6 
     if c['worker'] > 50:
         print('threads are too many')
         sys.exit()
@@ -26,3 +26,7 @@ def get_config():
         print('STEEM_CONFIG error')
         sys.exit()
     return c
+
+def strtotime(string, format_string = "%Y-%m-%dT%H:%M:%S"):
+    tuple = time.strptime(string, format_string)
+    return int(time.mktime(tuple))

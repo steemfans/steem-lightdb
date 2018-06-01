@@ -3,7 +3,7 @@
 
 import pymysql
 import json, os, sys, time
-import utils
+import utils.utils as utils
 
 task_type = {
     'user': 1,
@@ -14,7 +14,6 @@ task_type = {
     'post_vote': 6,
     'comment_vote': 7}
 
-#steemdb = pymysql.connect("localhost","testuser","test123","TESTDB" )
 def get(t):
     global task_type
     # get db config
