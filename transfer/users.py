@@ -60,16 +60,17 @@ class UserProcess(BlockProcess):
         db1 = self.db1
         db2 = self.db2
         try:
-            sql_main_data = '''
-                insert ignore into users
-                    (username, json_metadata, created_at, is_pow)
-                values
-                    (%s, %s, %s, %s)'''
+            cur2 = await db2.cursor()
+            if self.prepared_data['data'] != []:
+                sql_main_data = '''
+                    insert ignore into users
+                        (username, json_metadata, created_at, is_pow)
+                    values
+                        (%s, %s, %s, %s)'''
+                await cur2.executemany(sql_main_data, self.prepared_data['data'])
             sql_update_task = '''
                 update multi_tasks set is_finished = 1
                 where id = %s'''
-            cur2 = await db2.cursor()
-            await cur2.executemany(sql_main_data, self.prepared_data['data'])
             await cur2.execute(sql_update_task, (self.task_id))
             await db2.commit()
             await cur2.close()
