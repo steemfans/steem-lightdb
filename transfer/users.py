@@ -9,6 +9,8 @@ from multiprocessing import Pool
 from concurrent.futures import ThreadPoolExecutor,ProcessPoolExecutor
 from contextlib import suppress
 
+task_type = 'user'
+
 class UserProcess(BlockProcess):
     def __init__(self, loop, data_type):
         super().__init__(loop, data_type)
@@ -79,13 +81,14 @@ class UserProcess(BlockProcess):
             print('insert_data_failed', 'task_id:', self.task_id, self.prepared_data, e)
 
 def main():
+    global task_type
     while True:
-        all_tasks = tasks.get('user')
+        all_tasks = tasks.get(task_type)
         loop_tasks = []
         if all_tasks != []:
             loop = asyncio.get_event_loop()
             for one_task in all_tasks:
-                user_task = UserProcess(loop, 'user')
+                user_task = UserProcess(loop, task_type)
                 loop_tasks.append(asyncio.ensure_future(user_task.doMultiTasks(one_task)))
             loop.run_until_complete(asyncio.wait(loop_tasks))
             loop.close()
