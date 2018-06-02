@@ -5,6 +5,8 @@ import utils.tasks as tasks
 import utils.utils as utils
 from utils.BlockProcess import BlockProcess as BlockProcess
 import asyncio, aiomysql
+from multiprocessing import Pool
+from concurrent.futures import ThreadPoolExecutor,ProcessPoolExecutor
 from contextlib import suppress
 
 class UserProcess(BlockProcess):
@@ -88,6 +90,27 @@ def main():
             loop.close()
         time.sleep(3)
 
+def processor(all_tasks):
+    if all_tasks != []:
+        loop = asyncio.get_event_loop()
+        loop_tasks = []
+        for one_task in all_tasks:
+            user_task = UserProcess(loop, 'user')
+            loop_tasks.append(asyncio.ensure_future(user_task.doMultiTasks(one_task)))
+        loop.run_until_complete(asyncio.wait(loop_tasks))
+        loop.close()
+
+def mainMultiProcess():
+    config = utils.get_config()
+    while True:
+        all_tasks = tasks.splitTasks(tasks.get('user'), config['slice_step'])
+        if all_tasks != []:
+            p = ProcessPoolExecutor(config['worker'])
+            for t in all_tasks:
+                p.submit(processor, t)
+            p.shutdown()
+        time.sleep(3)
+
 if __name__ == '__main__':
     with suppress(KeyboardInterrupt):
-        main()
+        mainMultiProcess()

@@ -128,6 +128,20 @@ def generate_tasks(block_from, block_to, conn, user_t):
         conn.commit()
     return data
 
+def splitTasks(tasks, step=10):
+    length = len(tasks)
+    if length == 0:
+        return []
+    i = 0
+    result = []
+    while i <= length:
+        if (i+step) >= length:
+            result.append(tasks[i:(length+1)])
+        else:
+            result.append(tasks[i:(i+step)])
+        i = i + step
+    return result
+
 if __name__ == '__main__':
     data = get('user')
     print(data)
