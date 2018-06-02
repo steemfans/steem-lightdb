@@ -76,10 +76,17 @@ class UserProcess(BlockProcess):
             print('insert_data_failed', 'task_id:', self.task_id, self.prepared_data, e)
 
 def main():
-    loop = asyncio.get_event_loop()
-    user_task = UserProcess(loop, 'user')
-    loop.run_until_complete(user_task.doTask())
-    loop.close()
+    while True:
+        all_tasks = tasks.get('user')
+        loop_tasks = []
+        if all_tasks != []:
+            loop = asyncio.get_event_loop()
+            for one_task in all_tasks:
+                user_task = UserProcess(loop, 'user')
+                loop_tasks.append(asyncio.ensure_future(user_task.doMultiTasks(one_task)))
+            loop.run_until_complete(asyncio.wait(loop_tasks))
+            loop.close()
+        time.sleep(3)
 
 if __name__ == '__main__':
     with suppress(KeyboardInterrupt):
