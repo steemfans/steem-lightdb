@@ -45,7 +45,7 @@ class Comments
     private $body;
 
     /**
-     * @ORM\Column(type="json", nullable=true)
+     * @ORM\Column(type="text", nullable=true)
      */
     private $json_metadata;
 

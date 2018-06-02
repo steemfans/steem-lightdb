@@ -24,7 +24,7 @@ class Users
     private $username;
 
     /**
-     * @ORM\Column(type="json")
+     * @ORM\Column(type="text", nullable=true)
      */
     private $json_metadata;
 

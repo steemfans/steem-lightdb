@@ -46,7 +46,7 @@ class Posts
     private $body;
 
     /**
-     * @ORM\Column(type="json")
+     * @ORM\Column(type="text", nullable=true)
      */
     private $json_metadata;
 
