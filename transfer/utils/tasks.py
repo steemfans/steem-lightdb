@@ -12,7 +12,8 @@ task_type = {
     'tag': 4,
     'post_tag': 5,
     'post_vote': 6,
-    'comment_vote': 7}
+    'comment_vote': 7,
+    'user_relation': 8}
 
 def get(t):
     global task_type
