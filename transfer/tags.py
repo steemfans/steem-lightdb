@@ -11,7 +11,7 @@ from contextlib import suppress
 
 task_type = 'tag'
 
-class UserProcess(BlockProcess):
+class TagProcess(BlockProcess):
     def __init__(self, loop, data_type):
         super().__init__(loop, data_type)
     async def process(self, block_num, block_time, trans_id, ops):
@@ -75,7 +75,7 @@ def processor(all_tasks):
         loop = asyncio.get_event_loop()
         loop_tasks = []
         for one_task in all_tasks:
-            user_task = UserProcess(loop, task_type)
+            user_task = TagProcess(loop, task_type)
             loop_tasks.append(asyncio.ensure_future(user_task.doMultiTasks(one_task)))
         loop.run_until_complete(asyncio.wait(loop_tasks))
         loop.close()
