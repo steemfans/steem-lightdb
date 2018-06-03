@@ -61,7 +61,7 @@ def get(t):
         with steem.cursor() as cur2:
             cur2.execute(sql)
             res = cur2.fetchone()
-        if res == ():
+        if res == None:
             block_from = 1
         else:
             block_from = int(res['val']) + 1
