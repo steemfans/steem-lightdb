@@ -36,6 +36,10 @@ class UserProcess(BlockProcess):
                 username = op_detail['work'][1]['input']['worker_account']
                 json_metadata = None
                 is_pow = True 
+            elif op_type == 'account_create_with_delegation':
+                username = op_detail['new_account_name']
+                json_metadata = op_detail['json_metadata']
+                is_pow = False
             else:
                 # print('unknown type:', op_type)
                 continue
