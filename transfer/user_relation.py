@@ -9,7 +9,7 @@ from multiprocessing import Pool
 from concurrent.futures import ThreadPoolExecutor,ProcessPoolExecutor
 from contextlib import suppress
 
-task_type = 'tag'
+task_type = 'user_relation'
 
 class UserProcess(BlockProcess):
     def __init__(self, loop, data_type):
@@ -24,29 +24,44 @@ class UserProcess(BlockProcess):
         for op_idx, op in enumerate(ops):
             op_type = op[0]
             op_detail = op[1]
-            if op_type == 'comment' and op_detail['parent_author'] == '':
-                processed_data['data'].append((op_detail['parent_permlink']))
-                if op_detail['json_metadata'] == '':
+            if op_type == 'custom_json' and op_detail['id'] == 'follow':
+                if op_detail['json'] == '':
                     continue
                 try:
-                    json_metadata = json.loads(op_detail['json_metadata'])
+                    json_data = json.loads(op_detail['json'])
                 except Exception:
+                    print('parse error', op_detail['json'])
                     continue
-                if 'tags' in json_metadata:
-                    for tag in json_metadata['tags']:
-                        if self.checkExist(tag) == False:
-                            processed_data['data'].append((tag))
+
+                follower = json_data['follower']
+                following = json_data['following']
+                what = json_data['what']
+
+                sql = '''
+                    select id, username from users
+                    where username = %s or username = %s'''
+
+                cur2 = await db2.cursor()
+                await cur2.execute(sql, (follower, following))
+                user_data = await cur2.fetchall()
+                await cur2.close()
+
+                if len(user_data) == 2:
+                    for user in user_data:
+                        if user[1] == follower:
+                            follower_id = user[0]
+                        if user[1] == following:
+                            following_id = user[0]
+                    processed_data['data'].append((follower_id, following_id, what, block_time))
+                else:
+                    print('push user_relation into undo list', block_num, op)
+                    processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op)))
             else:
                 # print('unknown type:', op_type)
                 continue
         # print('processed:', processed_data)
         return processed_data
 
-    def checkExist(self, tag):
-        for val in self.prepared_data['data']:
-            if val[0] == tag:
-                return True
-        return False
     async def insertData(self):
         db1 = self.db1
         db2 = self.db2
@@ -54,11 +69,18 @@ class UserProcess(BlockProcess):
             cur2 = await db2.cursor()
             if self.prepared_data['data'] != []:
                 sql_main_data = '''
-                    insert ignore into tags
-                        (tag_name)
+                    insert into user_relations
+                        (follower_id, following_id, what, created_at)
                     values
-                        (%s)'''
+                        (%s, %s, %s, %s)'''
                 await cur2.executemany(sql_main_data, self.prepared_data['data'])
+            if self.prepared_data['undo'] != []:
+                sql_undo_data = '''
+                    insert into undo_op
+                        (block_num, transaction_id, op_index, op)
+                    values
+                        (%s, %s, %s, %s)'''
+                await cur2.executemany(sql_undo_data, self.prepared_data['undo'])
             sql_update_task = '''
                 update multi_tasks set is_finished = 1
                 where id = %s'''
