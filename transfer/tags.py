@@ -18,35 +18,41 @@ class TagProcess(BlockProcess):
         db1 = self.db1
         db2 = self.db2
         # print('process %i blcok\'s ops' % block_num)
-        processed_data = {
+        self.processed_data = {
             'data': [],
             'undo': []}
         for op_idx, op in enumerate(ops):
             op_type = op[0]
             op_detail = op[1]
             if op_type == 'comment' and op_detail['parent_author'] == '':
-                processed_data['data'].append((op_detail['parent_permlink']))
+                self.processed_data['data'].append((op_detail['parent_permlink'], ))
                 if op_detail['json_metadata'] == '':
+                    print('json_metadata is empty')
                     continue
                 try:
                     json_metadata = json.loads(op_detail['json_metadata'])
                 except Exception:
+                    print('json_metadata is not a json valid type')
                     continue
                 if 'tags' in json_metadata:
                     for tag in json_metadata['tags']:
                         if self.checkExist(tag) == False:
-                            processed_data['data'].append((tag))
+                            self.processed_data['data'].append((tag, ))
             else:
                 # print('unknown type:', op_type)
                 continue
-        # print('processed:', processed_data)
-        return processed_data
+        # print('processed:', self.processed_data)
+        return self.processed_data
 
     def checkExist(self, tag):
+        for val in self.processed_data['data']:
+            if val[0] == tag:
+                return True
         for val in self.prepared_data['data']:
             if val[0] == tag:
                 return True
         return False
+
     async def insertData(self):
         db1 = self.db1
         db2 = self.db2

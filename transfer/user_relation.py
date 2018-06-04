@@ -18,7 +18,7 @@ class UserRelationProcess(BlockProcess):
         db1 = self.db1
         db2 = self.db2
         # print('process %i blcok\'s ops' % block_num)
-        processed_data = {
+        self.processed_data = {
             'data': [],
             'undo': []}
         for op_idx, op in enumerate(ops):
@@ -52,15 +52,15 @@ class UserRelationProcess(BlockProcess):
                             follower_id = user[0]
                         if user[1] == following:
                             following_id = user[0]
-                    processed_data['data'].append((follower_id, following_id, what, block_time))
+                    self.processed_data['data'].append((follower_id, following_id, what, block_time, ))
                 else:
                     print('push user_relation into undo list', block_num, op)
-                    processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op)))
+                    self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), ))
             else:
                 # print('unknown type:', op_type)
                 continue
-        # print('processed:', processed_data)
-        return processed_data
+        # print('processed:', self.processed_data)
+        return self.processed_data
 
     async def insertData(self):
         db1 = self.db1

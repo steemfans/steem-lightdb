@@ -18,7 +18,7 @@ class UserProcess(BlockProcess):
         db1 = self.db1
         db2 = self.db2
         # print('process %i blcok\'s ops' % block_num)
-        processed_data = {
+        self.processed_data = {
             'data': [],
             'undo': []}
         for op_idx, op in enumerate(ops):
@@ -53,10 +53,13 @@ class UserProcess(BlockProcess):
                 await cur2.close()
                 if is_exist == None:
                     # print(username)
-                    processed_data['data'].append((username, json_metadata, block_time, is_pow))
-        # print('processed:', processed_data)
-        return processed_data
+                    self.processed_data['data'].append((username, json_metadata, block_time, is_pow,))
+        # print('processed:', self.processed_data)
+        return self.processed_data
     def checkExist(self, username):
+        for val in self.processed_data['data']:
+            if val[0] == username:
+                return True
         for val in self.prepared_data['data']:
             if val[0] == username:
                 return True
