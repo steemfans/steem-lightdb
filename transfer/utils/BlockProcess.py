@@ -73,7 +73,7 @@ class BlockProcess(object):
                             curr_block_num,
                             curr_block_timestamp,
                             curr_block_trans_id,
-                            curr_block_trans['operations'])
+                            dict(curr_block_trans["operations"]))
                         if processed_data['data'] != []:
                             tmp_len = len(self.prepared_data['data'])
                             self.prepared_data['data'][tmp_len:tmp_len] = processed_data['data']
