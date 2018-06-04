@@ -53,7 +53,7 @@ class UserProcess(BlockProcess):
                 await cur2.close()
                 if is_exist == None:
                     # print(username)
-                    self.processed_data['data'].append((username, json_metadata, block_time, is_pow,))
+                    self.processed_data['data'].append((username, json_metadata, block_time, is_pow, ))
         # print('processed:', self.processed_data)
         return self.processed_data
     def checkExist(self, username):
