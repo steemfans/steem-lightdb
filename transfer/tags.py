@@ -27,12 +27,10 @@ class TagProcess(BlockProcess):
             if op_type == 'comment' and op_detail['parent_author'] == '':
                 self.processed_data['data'].append((op_detail['parent_permlink'], ))
                 if op_detail['json_metadata'] == '':
-                    print('json_metadata is empty')
                     continue
                 try:
                     json_metadata = json.loads(op_detail['json_metadata'])
                 except Exception:
-                    print('json_metadata is not a json valid type')
                     continue
                 if 'tags' in json_metadata:
                     for tag in json_metadata['tags']:
