@@ -69,6 +69,7 @@ class BlockProcess(object):
                     for idx, trans in enumerate(curr_block_all_transactions):
                         curr_block_trans_id = curr_block_info['transaction_ids'][idx]
                         curr_block_trans = json.loads(trans[1])
+                        # force dict to solve "list indices must be integers or slices, not str"
                         processed_data = await self.process(
                             curr_block_num,
                             curr_block_timestamp,
