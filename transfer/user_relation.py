@@ -52,7 +52,7 @@ class UserRelationProcess(BlockProcess):
                             follower_id = user[0]
                         if user[1] == following:
                             following_id = user[0]
-                    self.processed_data['data'].append((follower_id, following_id, what, block_time, ))
+                    self.processed_data['data'].append((follower_id, following_id, what[0], block_time, ))
                 else:
                     print('push user_relation into undo list', block_num, op)
                     self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), ))
