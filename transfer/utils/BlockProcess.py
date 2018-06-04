@@ -91,7 +91,7 @@ class BlockProcess(object):
             self.db1 = None
             self.db2 = None
         except Exception as e:
-            print('doMultiTask ERR', e)
+            utils.PrintException(e)
     async def process(self, block_num, block_time, trans_id, ops):
         print('process parent', block_num, block_time, trans_id, ops)
     async def insertData(self):
