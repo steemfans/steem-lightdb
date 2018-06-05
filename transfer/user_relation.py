@@ -38,7 +38,7 @@ class UserRelationProcess(BlockProcess):
                             follower = json_data['follower']
                         if 'following' in json_data:
                             following = json_data['following']
-                        if 'what' in json_data and len(json_data['what']) > 0:
+                        if 'what' in json_data and isinstance(json_data['what'], list) and len(json_data['what']) > 0:
                             what = json_data['what'][0]
                     #elif isinstance(json_data, list):
                     #    if len(json_data) >= 2 and json_data[0] == 'follow':
@@ -52,11 +52,10 @@ class UserRelationProcess(BlockProcess):
                     #        continue
                     else:
                         continue
-                    if what == '':
-                        continue
-                    if follower == None and following == None and what == None:
+                    if follower == None and following == None and (what == None or what == ''):
                         print('follow_data_error', block_num, trans_id, follower, following, what, op)
                         continue
+
                     sql = '''
                         select id, username from users
                         where username = %s or username = %s'''
