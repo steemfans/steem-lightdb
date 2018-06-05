@@ -21,28 +21,33 @@ class TagProcess(BlockProcess):
         self.processed_data = {
             'data': [],
             'undo': []}
-        for op_idx, op in enumerate(ops):
-            op_type = op[0]
-            op_detail = op[1]
-            if op_type == 'comment' and op_detail['parent_author'] == '':
-                self.processed_data['data'].append((op_detail['parent_permlink'], ))
-                if op_detail['json_metadata'] == '':
-                    continue
-                try:
-                    json_metadata = json.loads(op_detail['json_metadata'])
-                except Exception:
-                    continue
-                if 'tags' in json_metadata:
-                    if isinstance(json_metadata['tags'], list):
-                        for tag in json_metadata['tags']:
-                            if self.checkExist(tag) == False:
-                                self.processed_data['data'].append((tag, ))
-                    else:
-                        print('json_metadata tags is not list type', block_num, trans_id, ops)
+        try:
+            for op_idx, op in enumerate(ops):
+                op_type = op[0]
+                op_detail = op[1]
+                if op_type == 'comment' and op_detail['parent_author'] == '':
+                    self.processed_data['data'].append((op_detail['parent_permlink'], ))
+                    if op_detail['json_metadata'] == '':
                         continue
-            else:
-                # print('unknown type:', op_type)
-                continue
+                    try:
+                        json_metadata = json.loads(op_detail['json_metadata'])
+                    except Exception:
+                        continue
+                    if 'tags' in json_metadata:
+                        if isinstance(json_metadata['tags'], list):
+                            for tag in json_metadata['tags']:
+                                if self.checkExist(tag) == False:
+                                    self.processed_data['data'].append((tag, ))
+                        else:
+                            print('json_metadata tags is not list type', block_num, trans_id, ops)
+                            continue
+                else:
+                    # print('unknown type:', op_type)
+                    continue
+        except Exception as e:
+            utils.PrintException([block_num, trans_id, ops])
+            return self.processed_data
+
         # print('processed:', self.processed_data)
         return self.processed_data
 
