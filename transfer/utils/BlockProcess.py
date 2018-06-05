@@ -20,6 +20,7 @@ class BlockProcess(object):
                     port=db1_c['port'],
                     user=db1_c['user'],
                     password=db1_c['pass'],
+                    charset='utf8mb4',
                     db=db1_c['db'],
                     autocommit=False,
                     loop=self.loop)
@@ -28,6 +29,7 @@ class BlockProcess(object):
                     port=db2_c['port'],
                     user=db2_c['user'],
                     password=db2_c['pass'],
+                    charset='utf8mb4',
                     db=db2_c['db'],
                     autocommit=False,
                     loop=self.loop)
