@@ -79,7 +79,7 @@ class UserRelationProcess(BlockProcess):
                     utils.PrintException([block_num, trans_id, ops])
                     continue
             else:
-                print('unknown type:', op_type, block_num, trans_id, ops, op_idx)
+                # print('unknown type:', op_type, block_num, trans_id, ops, op_idx)
                 continue
         # print('processed:', self.processed_data)
         return self.processed_data
