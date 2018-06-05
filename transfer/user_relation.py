@@ -17,47 +17,69 @@ class UserRelationProcess(BlockProcess):
     async def process(self, block_num, block_time, trans_id, ops):
         db1 = self.db1
         db2 = self.db2
-        # print('process %i blcok\'s ops' % block_num)
+        # print('process %i blcok\'s ops' % block_num, ops)
         self.processed_data = {
             'data': [],
             'undo': []}
         for op_idx, op in enumerate(ops):
             op_type = op[0]
             op_detail = op[1]
-            if op_type == 'custom_json' and op_detail['id'] == 'follow':
+            if op_type == 'custom_json' and 'id' in op_detail and op_detail['id'] == 'follow':
                 if op_detail['json'] == '':
                     continue
                 try:
                     json_data = json.loads(op_detail['json'])
-                except Exception:
-                    print('parse error', op_detail['json'])
+
+                    follower = None
+                    following = None
+                    what = None
+                    if isinstance(json_data, dict):
+                        if 'follower' in json_data:
+                            follower = json_data['follower']
+                        if 'following' in json_data:
+                            following = json_data['following']
+                        if 'what' in json_data and len(json_data['what']) > 0:
+                            what = json_data['what'][0]
+                    #elif isinstance(json_data, list):
+                    #    if len(json_data) >= 2 and json_data[0] == 'follow':
+                    #        if 'follower' in json_data[1]:
+                    #            follower = json_data[1]['follower']
+                    #        if 'following' in json_data[1]:
+                    #            following = json_data[1]['following']
+                    #        if 'what' in json_data[1] and len(json_data[1]['what']) > 0:
+                    #            what = json_data[1]['what'][0]
+                    #    else:
+                    #        continue
+                    else:
+                        continue
+                    if what == '':
+                        continue
+                    if follower == None and following == None and what == None:
+                        print('follow_data_error', block_num, trans_id, follower, following, what, op)
+                        continue
+                    sql = '''
+                        select id, username from users
+                        where username = %s or username = %s'''
+
+                    cur2 = await db2.cursor()
+                    await cur2.execute(sql, (follower, following))
+                    user_data = await cur2.fetchall()
+                    await cur2.close()
+
+                    if len(user_data) == 2:
+                        for user in user_data:
+                            if user[1] == follower:
+                                follower_id = user[0]
+                            if user[1] == following:
+                                following_id = user[0]
+                        self.processed_data['data'].append((follower_id, following_id, what, block_time, ))
+                    else:
+                        self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), ))
+                except Exception as e:
+                    utils.PrintException([block_num, trans_id, ops])
                     continue
-
-                follower = json_data['follower']
-                following = json_data['following']
-                what = json_data['what']
-
-                sql = '''
-                    select id, username from users
-                    where username = %s or username = %s'''
-
-                cur2 = await db2.cursor()
-                await cur2.execute(sql, (follower, following))
-                user_data = await cur2.fetchall()
-                await cur2.close()
-
-                if len(user_data) == 2:
-                    for user in user_data:
-                        if user[1] == follower:
-                            follower_id = user[0]
-                        if user[1] == following:
-                            following_id = user[0]
-                    self.processed_data['data'].append((follower_id, following_id, what[0], block_time, ))
-                else:
-                    print('push user_relation into undo list', block_num, op)
-                    self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), ))
             else:
-                # print('unknown type:', op_type)
+                print('unknown type:', op_type, block_num, trans_id, ops, op_idx)
                 continue
         # print('processed:', self.processed_data)
         return self.processed_data

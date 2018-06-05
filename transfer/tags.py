@@ -33,9 +33,13 @@ class TagProcess(BlockProcess):
                 except Exception:
                     continue
                 if 'tags' in json_metadata:
-                    for tag in json_metadata['tags']:
-                        if self.checkExist(tag) == False:
-                            self.processed_data['data'].append((tag, ))
+                    if isinstance(json_metadata['tags'], list):
+                        for tag in json_metadata['tags']:
+                            if self.checkExist(tag) == False:
+                                self.processed_data['data'].append((tag, ))
+                    else:
+                        print('json_metadata tags is not list type', block_num, trans_id, ops)
+                        continue
             else:
                 # print('unknown type:', op_type)
                 continue
