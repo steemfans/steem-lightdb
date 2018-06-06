@@ -31,13 +31,10 @@ class TagProcess(BlockProcess):
                 try:
                     json_metadata = json.loads(op_detail['json_metadata'])
                     if 'tags' in json_metadata:
-                        if isinstance(json_metadata, list) and isinstance(json_metadata['tags'], list):
-                            for tag in json_metadata['tags']:
-                                if self.checkExist(tag) == False:
-                                    self.processed_data['data'].append((tag, ))
-                        else:
-                            print('json_metadata tags is not list type', block_num, trans_id, op_idx)
-                            continue
+                        for tag in json_metadata['tags']:
+                            if await self.checkExist(tag) == False:
+                                self.processed_data['data'].append((tag, ))
+                                #print('block_num:', block_num, 'tag:', tag)
                 except Exception as e:
                     utils.PrintException([block_num, trans_id, ops, e])
                     continue
@@ -48,13 +45,22 @@ class TagProcess(BlockProcess):
         # print('processed:', self.processed_data)
         return self.processed_data
 
-    def checkExist(self, tag):
+    async def checkExist(self, tag):
         for val in self.processed_data['data']:
             if val[0] == tag:
                 return True
         for val in self.prepared_data['data']:
             if val[0] == tag:
                 return True
+        sql = '''select id from tags
+            where tag_name = %s'''
+        db2 = self.db2
+        cur2 = await db2.cursor()
+        await cur2.execute(sql, (tag,))
+        data = await cur2.fetchall()
+        await cur2.close()
+        if len(data) > 0:
+            return True
         return False
 
     async def insertData(self):

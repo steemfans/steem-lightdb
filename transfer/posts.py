@@ -85,6 +85,7 @@ class PostsProcess(BlockProcess):
         cur2 = await db2.cursor()
         await cur2.execute(sql, (author_id, main_tag_id, permlink, ))
         data = await cur2.fetchall()
+        cur2.close()
         if len(data) > 0:
             return True
         return False
