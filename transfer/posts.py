@@ -31,7 +31,7 @@ class PostsProcess(BlockProcess):
                     author_id = await self.getId('users', op_detail['author'])
                     body = op_detail['body']
                     dmp = dmp_module.diff_match_patch()
-                    print('get_in_post:', op)
+                    # print('get_in_post:', op)
                     try:
                         # edit
                         dmp.patch_fromText(body);
@@ -64,7 +64,7 @@ class PostsProcess(BlockProcess):
                     self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op)))
                     print('do_later_del', block_num, trans_id, op_idx)
             except Exception as e:
-                utils.PrintException([block_num, trans_id, ops, e])
+                utils.PrintException([block_num, trans_id, op_idx, e])
                 continue
 
         # print('processed:', self.processed_data)
@@ -80,9 +80,10 @@ class PostsProcess(BlockProcess):
             if val[0] == main_tag_id and val[1] == author_id and val[2] == permlink:
                 return True
         sql = '''select id from posts
-            where author_id = %s and main_tag_id = %s and permlink = %s'''
+            where author_id = %s and main_tag_id = %s and permlink = %s
+            order by id asc'''
         cur2 = await db2.cursor()
-        await cur2.execute(sql, (author_id, main_tag_id, permlink))
+        await cur2.execute(sql, (author_id, main_tag_id, permlink, ))
         data = await cur2.fetchall()
         if len(data) > 0:
             return True

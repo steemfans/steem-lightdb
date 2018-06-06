@@ -75,7 +75,7 @@ class UserRelationProcess(BlockProcess):
                     else:
                         self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), ))
                 except Exception as e:
-                    utils.PrintException([block_num, trans_id, ops])
+                    utils.PrintException([block_num, trans_id, op_idx])
                     continue
             else:
                 # print('unknown type:', op_type, block_num, trans_id, ops, op_idx)
@@ -110,7 +110,7 @@ class UserRelationProcess(BlockProcess):
             await cur2.close()
         except Exception as e:
             await db2.rollback()
-            print('insert_data_failed', 'task_id:', self.task_id, self.prepared_data, e)
+            print('insert_data_failed', 'task_id:', self.task_id, e)
 
 def processor(all_tasks):
     global task_type

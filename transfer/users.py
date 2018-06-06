@@ -85,7 +85,7 @@ class UserProcess(BlockProcess):
             await cur2.close()
         except Exception as e:
             await db2.rollback()
-            print('insert_data_failed', 'task_id:', self.task_id, self.prepared_data, e)
+            print('insert_data_failed', 'task_id:', self.task_id, e)
 
 def main():
     global task_type

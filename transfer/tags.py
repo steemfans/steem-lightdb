@@ -36,7 +36,7 @@ class TagProcess(BlockProcess):
                                 if self.checkExist(tag) == False:
                                     self.processed_data['data'].append((tag, ))
                         else:
-                            print('json_metadata tags is not list type', block_num, trans_id, ops)
+                            print('json_metadata tags is not list type', block_num, trans_id, op_idx)
                             continue
                 except Exception as e:
                     utils.PrintException([block_num, trans_id, ops, e])
@@ -77,7 +77,7 @@ class TagProcess(BlockProcess):
             await cur2.close()
         except Exception as e:
             await db2.rollback()
-            print('insert_data_failed', 'task_id:', self.task_id, self.prepared_data, e)
+            print('insert_data_failed', 'task_id:', self.task_id, e)
 
 def processor(all_tasks):
     global task_type
