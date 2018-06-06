@@ -117,11 +117,17 @@ def processor(all_tasks):
     if all_tasks != []:
         loop = asyncio.get_event_loop()
         loop_tasks = []
-        for one_task in all_tasks:
-            user_task = UserRelationProcess(loop, task_type)
-            loop_tasks.append(asyncio.ensure_future(user_task.doMultiTasks(one_task)))
-        loop.run_until_complete(asyncio.wait(loop_tasks))
-        loop.close()
+        try:
+            for one_task in all_tasks:
+                user_task = UserRelationProcess(loop, task_type)
+                loop_tasks.append(asyncio.ensure_future(user_task.doMultiTasks(one_task)))
+            loop.run_until_complete(asyncio.wait(loop_tasks))
+        except KeyboardInterrupt as e:
+            for task in asyncio.Task.all_tasks():
+                task.cancel()
+            loop.stop()
+        finally:
+            loop.close()
 
 def mainMultiProcess():
     global task_type
