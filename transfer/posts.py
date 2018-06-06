@@ -28,7 +28,18 @@ class PostsProcess(BlockProcess):
                 op_detail = op[1]
                 if op_type == 'comment' and op_detail['parent_author'] == '':
                     main_tag_id = await self.getId('tags', (op_detail['parent_permlink'],))
+                    if main_tag_id == None:
+                        self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op)))
+                        continue
+                    else:
+                        main_tag_id = main_tag_id[0]
                     author_id = await self.getId('users', op_detail['author'])
+                    if author_id == None:
+                        self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op)))
+                        continue
+                    else:
+                        author_id = author_id[0]
+                    #print('ttt:', main_tag_id, author_id)
                     body = op_detail['body']
                     dmp = dmp_module.diff_match_patch()
                     # print('get_in_post:', op)
@@ -36,7 +47,7 @@ class PostsProcess(BlockProcess):
                         # edit
                         dmp.patch_fromText(body);
                         self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op)))
-                        print('do_later_edit', block_num, trans_id, op_idx)
+                        #print('do_later_edit', block_num, trans_id, op_idx)
                         continue
                     except ValueError as e:
                         permlink = op_detail['permlink']
@@ -59,10 +70,10 @@ class PostsProcess(BlockProcess):
                                 is_del,))
                         else:
                             self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op)))
-                            print('do_later_edit2', block_num, trans_id, op_idx)
+                            #print('do_later_edit2', block_num, trans_id, op_idx)
                 elif op_type == 'delete_comment':
                     self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op)))
-                    print('do_later_del', block_num, trans_id, op_idx)
+                    #print('do_later_del', block_num, trans_id, op_idx)
             except Exception as e:
                 utils.PrintException([block_num, trans_id, op_idx, e])
                 continue
@@ -79,13 +90,15 @@ class PostsProcess(BlockProcess):
         for val in self.prepared_data['data']:
             if val[0] == main_tag_id and val[1] == author_id and val[2] == permlink:
                 return True
+        #print('testTEST', main_tag_id, author_id, permlink)
         sql = '''select id from posts
-            where author_id = %s and main_tag_id = %s and permlink = %s
-            order by id asc'''
+            where author_id = %s
+                and main_tag_id = %s
+                and permlink = %s'''
         cur2 = await db2.cursor()
-        await cur2.execute(sql, (author_id, main_tag_id, permlink, ))
+        await cur2.execute(sql, (author_id, main_tag_id, permlink))
         data = await cur2.fetchall()
-        cur2.close()
+        await cur2.close()
         if len(data) > 0:
             return True
         return False
@@ -98,19 +111,19 @@ class PostsProcess(BlockProcess):
                 where username = %s'''
         elif table == 'tags':
             if len(val) <= 0:
-                return ()
+                return None
             sql = '''select id from tags
                 where tag_name in (%s)''' % ','.join(['%s'] * len(val))
         else:
-            return ()
+            return None
         
         try:
             cur2 = await db2.cursor()
             await cur2.execute(sql, val)
-            data = await cur2.fetchall()
+            data = await cur2.fetchone()
             return data
         except:
-            return ()
+            return None
 
     async def insertData(self):
         db1 = self.db1
@@ -124,6 +137,13 @@ class PostsProcess(BlockProcess):
                     values
                         (%s, %s, %s, %s, %s, %s, %s, %s, %s)'''
                 await cur2.executemany(sql_main_data, self.prepared_data['data'])
+            if self.prepared_data['undo'] != []:
+                sql_undo_data = '''
+                    insert ignore into undo_op
+                        (block_num, transaction_id, op_index, op)
+                    values
+                        (%s, %s, %s, %s)'''
+                await cur2.executemany(sql_undo_data, self.prepared_data['undo'])
             sql_update_task = '''
                 update multi_tasks set is_finished = 1
                 where id = %s'''

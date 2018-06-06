@@ -77,6 +77,13 @@ class UserProcess(BlockProcess):
                     values
                         (%s, %s, %s, %s)'''
                 await cur2.executemany(sql_main_data, self.prepared_data['data'])
+            if self.prepared_data['undo'] != []:
+                sql_undo_data = '''
+                    insert ignore into undo_op
+                        (block_num, transaction_id, op_index, op)
+                    values
+                        (%s, %s, %s, %s)'''
+                await cur2.executemany(sql_undo_data, self.prepared_data['undo'])
             sql_update_task = '''
                 update multi_tasks set is_finished = 1
                 where id = %s'''
@@ -102,12 +109,13 @@ def main():
         time.sleep(3)
 
 def processor(all_tasks):
+    global task_type
     if all_tasks != []:
         loop = asyncio.get_event_loop()
         loop_tasks = []
         try:
             for one_task in all_tasks:
-                user_task = UserRelationProcess(loop, task_type)
+                user_task = UserProcess(loop, task_type)
                 loop_tasks.append(asyncio.ensure_future(user_task.doMultiTasks(one_task)))
             loop.run_until_complete(asyncio.wait(loop_tasks))
         except KeyboardInterrupt as e:
@@ -118,9 +126,10 @@ def processor(all_tasks):
             loop.close()
 
 def mainMultiProcess():
+    global task_type
     config = utils.get_config()
     while True:
-        all_tasks = tasks.splitTasks(tasks.get('user'), config['slice_step'])
+        all_tasks = tasks.splitTasks(tasks.get(task_type), config['slice_step'])
         if all_tasks != []:
             p = ProcessPoolExecutor(config['worker'])
             for t in all_tasks:

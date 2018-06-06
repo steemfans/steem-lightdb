@@ -27,7 +27,7 @@ def get(t):
         user = c1['user'],
         password = c1['pass'],
         database = c1['db'],
-        charset = 'utf8',
+        charset = 'utf8mb4',
         cursorclass = pymysql.cursors.DictCursor,
         autocommit = True)
     steem = pymysql.connect(
@@ -35,7 +35,7 @@ def get(t):
         user = c2['user'],
         password = c2['pass'],
         database = c2['db'],
-        charset = 'utf8',
+        charset = 'utf8mb4',
         cursorclass = pymysql.cursors.DictCursor,
         autocommit = True)
 
