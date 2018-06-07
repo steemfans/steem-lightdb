@@ -11,9 +11,8 @@ task_type = {
     'comment': 3,
     'tag': 4,
     'post_tag': 5,
-    'post_vote': 6,
-    'comment_vote': 7,
-    'user_relation': 8}
+    'vote': 6,
+    'user_relation': 7}
 
 def get(t):
     global task_type
@@ -142,6 +141,13 @@ def splitTasks(tasks, step=10):
             result.append(tasks[i:(i+step)])
         i = i + step
     return result
+
+def getTypeId(t):
+    global task_type
+    if t in task_type:
+        return task_type[t]
+    else:
+        return 0
 
 if __name__ == '__main__':
     data = get('user')

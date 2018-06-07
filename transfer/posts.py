@@ -16,6 +16,7 @@ class PostsProcess(BlockProcess):
     def __init__(self, loop, data_type):
         super().__init__(loop, data_type)
     async def process(self, block_num, block_time, trans_id, ops):
+        global task_type
         db1 = self.db1
         db2 = self.db2
         # print('process %i blcok\'s ops' % block_num)
@@ -29,13 +30,13 @@ class PostsProcess(BlockProcess):
                 if op_type == 'comment' and op_detail['parent_author'] == '':
                     main_tag_id = await self.getId('tags', (op_detail['parent_permlink'],))
                     if main_tag_id == None:
-                        self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op)))
+                        self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type)))
                         continue
                     else:
                         main_tag_id = main_tag_id[0]
                     author_id = await self.getId('users', op_detail['author'])
                     if author_id == None:
-                        self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op)))
+                        self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type)))
                         continue
                     else:
                         author_id = author_id[0]
@@ -46,7 +47,7 @@ class PostsProcess(BlockProcess):
                     try:
                         # edit
                         dmp.patch_fromText(body);
-                        self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op)))
+                        self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type)))
                         #print('do_later_edit', block_num, trans_id, op_idx)
                         continue
                     except ValueError as e:
@@ -69,10 +70,10 @@ class PostsProcess(BlockProcess):
                                 updated_at,
                                 is_del,))
                         else:
-                            self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op)))
+                            self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type)))
                             #print('do_later_edit2', block_num, trans_id, op_idx)
                 elif op_type == 'delete_comment':
-                    self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op)))
+                    self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type)))
                     #print('do_later_del', block_num, trans_id, op_idx)
             except Exception as e:
                 utils.PrintException([block_num, trans_id, op_idx, e])
@@ -140,9 +141,9 @@ class PostsProcess(BlockProcess):
             if self.prepared_data['undo'] != []:
                 sql_undo_data = '''
                     insert ignore into undo_op
-                        (block_num, transaction_id, op_index, op)
+                        (block_num, transaction_id, op_index, op, task_type)
                     values
-                        (%s, %s, %s, %s)'''
+                        (%s, %s, %s, %s, %s)'''
                 await cur2.executemany(sql_undo_data, self.prepared_data['undo'])
             sql_update_task = '''
                 update multi_tasks set is_finished = 1

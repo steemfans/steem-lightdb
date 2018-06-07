@@ -15,6 +15,7 @@ class UserRelationProcess(BlockProcess):
     def __init__(self, loop, data_type):
         super().__init__(loop, data_type)
     async def process(self, block_num, block_time, trans_id, ops):
+        global task_type
         db1 = self.db1
         db2 = self.db2
         # print('process %i blcok\'s ops' % block_num, ops)
@@ -73,7 +74,7 @@ class UserRelationProcess(BlockProcess):
                                 following_id = user[0]
                         self.processed_data['data'].append((follower_id, following_id, what, block_time, ))
                     else:
-                        self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), ))
+                        self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type))
                 except Exception as e:
                     utils.PrintException([block_num, trans_id, op_idx])
                     return False
@@ -98,9 +99,9 @@ class UserRelationProcess(BlockProcess):
             if self.prepared_data['undo'] != []:
                 sql_undo_data = '''
                     insert into undo_op
-                        (block_num, transaction_id, op_index, op)
+                        (block_num, transaction_id, op_index, op, task_type)
                     values
-                        (%s, %s, %s, %s)'''
+                        (%s, %s, %s, %s, %s)'''
                 await cur2.executemany(sql_undo_data, self.prepared_data['undo'])
             sql_update_task = '''
                 update multi_tasks set is_finished = 1
