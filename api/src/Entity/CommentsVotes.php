@@ -29,7 +29,7 @@ class CommentsVotes
     private $user;
 
     /**
-     * @ORM\Column(type="smallint", length=6)
+     * @ORM\Column(type="smallint", length=6, options={"unsigned"=true})
      */
     private $weight;
 
@@ -39,9 +39,14 @@ class CommentsVotes
     private $updown;
 
     /**
-     * @ORM\Column(type="integer", nullable=true)
+     * @ORM\Column(type="integer")
      */
     private $created_at;
+
+    /**
+     * @ORM\Column(type="integer")
+     */
+    private $updated_at;
 
     public function getId()
     {
@@ -104,6 +109,18 @@ class CommentsVotes
     public function setCreatedAt(?int $created_at): self
     {
         $this->created_at = $created_at;
+
+        return $this;
+    }
+
+    public function getUpdatedAt(): ?int
+    {
+        return $this->updated_at;
+    }
+
+    public function setUpdatedAt(int $updated_at): self
+    {
+        $this->updated_at = $updated_at;
 
         return $this;
     }
