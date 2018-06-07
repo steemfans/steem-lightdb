@@ -36,6 +36,11 @@ class UndoOp
      */
     private $op;
 
+    /**
+     * @ORM\Column(type="integer")
+     */
+    private $task_type;
+
     public function getId()
     {
         return $this->id;
@@ -85,6 +90,18 @@ class UndoOp
     public function setOp(string $op): self
     {
         $this->op = $op;
+
+        return $this;
+    }
+
+    public function getTaskType(): ?int
+    {
+        return $this->task_type;
+    }
+
+    public function setTaskType(int $task_type): self
+    {
+        $this->task_type = $task_type;
 
         return $this;
     }
