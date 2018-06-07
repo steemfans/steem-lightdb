@@ -76,7 +76,7 @@ class UserRelationProcess(BlockProcess):
                         self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), ))
                 except Exception as e:
                     utils.PrintException([block_num, trans_id, op_idx])
-                    continue
+                    return False
             else:
                 # print('unknown type:', op_type, block_num, trans_id, ops, op_idx)
                 continue

@@ -55,6 +55,7 @@ class BlockProcess(object):
             self.prepared_data = {
                 'data': [],
                 'undo': []}
+            has_err = False
             for block in blocks:
                 curr_block_num = block[0]
                 curr_block_info = json.loads(block[1])
@@ -76,22 +77,30 @@ class BlockProcess(object):
                             curr_block_timestamp,
                             curr_block_trans_id,
                             curr_block_trans['operations'])
+                        if processed_data == False:
+                            has_err = True
+                            break;
                         if processed_data['data'] != []:
                             tmp_len = len(self.prepared_data['data'])
                             self.prepared_data['data'][tmp_len:tmp_len] = processed_data['data']
                         if processed_data['undo'] != []:
                             tmp_len = len(self.prepared_data['undo'])
                             self.prepared_data['undo'][tmp_len:tmp_len] = processed_data['undo']
-            # insert data
-            await self.insertData()
+                    if has_err == True:
+                        break;
+            if has_err == True:
+                print('there are some unexpected errors. task_id ', self.task_id, 'will not run.')
+            else:
+                # insert data
+                await self.insertData()
 
             # end task
-            task_end_time = time.time()
-            print('task_spent:', task_end_time - task_start_time)
             db1.close()
             db2.close()
             self.db1 = None
             self.db2 = None
+            task_end_time = time.time()
+            print('task_id:', self.task_id, 'db closed', 'task_spent:', task_end_time - task_start_time)
         except Exception as e:
             utils.PrintException(e)
     async def process(self, block_num, block_time, trans_id, ops):

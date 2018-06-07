@@ -76,7 +76,7 @@ class PostsProcess(BlockProcess):
                     #print('do_later_del', block_num, trans_id, op_idx)
             except Exception as e:
                 utils.PrintException([block_num, trans_id, op_idx, e])
-                continue
+                return False
 
         # print('processed:', self.processed_data)
         return self.processed_data

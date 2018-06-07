@@ -37,7 +37,7 @@ class TagProcess(BlockProcess):
                                 #print('block_num:', block_num, 'tag:', tag)
                 except Exception as e:
                     utils.PrintException([block_num, trans_id, ops, e])
-                    continue
+                    return False
             else:
                 # print('unknown type:', op_type)
                 continue
