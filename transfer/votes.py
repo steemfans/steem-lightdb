@@ -30,6 +30,7 @@ class VotesProcess(BlockProcess):
                 if op_type == 'vote':
                     weight = op_detail['weight']
                     created_at = block_time
+                    updated_at = block_time
                     post_id = await self.getId('posts', (op_detail['author'], op_detail['permlink']))
                     if post_id == None:
                         comment_id = await self.getId('comments', (op_detail['author'], op_detail['permlink']))
@@ -50,7 +51,7 @@ class VotesProcess(BlockProcess):
                                 else:
                                     weight = (-1) * weight
                                     updown = False 
-                                self.processed_data['data'].append(('comment', (comment_id, voter_id, weight, updown, created_at)))
+                                self.processed_data['data'].append(('comment', (comment_id, voter_id, weight, updown, created_at, updated_at)))
                     else:
                         vote_id = self.getId('posts_votes', post_id)
                         if vote_id != None:
@@ -64,7 +65,7 @@ class VotesProcess(BlockProcess):
                             else:
                                 weight = (-1) * weight
                                 updown = False 
-                            self.processed_data['data'].append(('post', (post_id, voter_id, weight, updown, created_at)))
+                            self.processed_data['data'].append(('post', (post_id, voter_id, weight, updown, created_at, updated_at)))
             except Exception as e:
                 utils.PrintException(e)
                 return False
@@ -125,9 +126,10 @@ class VotesProcess(BlockProcess):
                             weight,
                             updown,
                             created_at,
+                            updated_at,
                         )
                     values
-                        (%s, %s, %s, %s, %s)'''
+                        (%s, %s, %s, %s, %s, %s)'''
                 await cur2.executemany(sql_post_data, posts_votes)
                 sql_comment_data = '''
                     insert into comments_votes
@@ -137,9 +139,10 @@ class VotesProcess(BlockProcess):
                             weight,
                             updown,
                             created_at,
+                            updated_at,
                         )
                     values
-                        (%s, %s, %s, %s, %s)'''
+                        (%s, %s, %s, %s, %s, %s)'''
                 await cur2.executemany(sql_main_data, self.prepared_data['data'])
             if self.prepared_data['undo'] != []:
                 sql_undo_data = '''
