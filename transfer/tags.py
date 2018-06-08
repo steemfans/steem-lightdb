@@ -30,11 +30,13 @@ class TagProcess(BlockProcess):
                     continue
                 try:
                     json_metadata = json.loads(op_detail['json_metadata'])
-                    if 'tags' in json_metadata:
-                        for tag in json_metadata['tags']:
-                            if await self.checkExist(tag) == False:
-                                self.processed_data['data'].append((tag, ))
-                                #print('block_num:', block_num, 'tag:', tag)
+                    if isinstance(json_metadata, list):
+                        if 'tags' in json_metadata:
+                            for tag in json_metadata['tags']:
+                                if await self.checkExist(tag) == False:
+                                    self.processed_data['data'].append((tag, ))
+                    else:
+                        print('invalid json_metadata:', json_metadata)
                 except Exception as e:
                     utils.PrintException([block_num, trans_id, ops, e])
                     return False

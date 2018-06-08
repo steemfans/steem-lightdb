@@ -36,7 +36,7 @@ class PostsTagsProcess(BlockProcess):
                     try:
                         json_metadata = json.loads(op_detail['json_metadata'])
                     except Exception as e:
-                        print('parse json failed')
+                        print('parse json failed:', op_detail['json_metadata'])
                         continue
 
                     if 'tags' in json_metadata:
