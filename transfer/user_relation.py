@@ -74,7 +74,7 @@ class UserRelationProcess(BlockProcess):
                                 following_id = user[0]
                         self.processed_data['data'].append((follower_id, following_id, what, block_time, ))
                     else:
-                        self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type))
+                        self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type)))
                 except Exception as e:
                     utils.PrintException([block_num, trans_id, op_idx])
                     return False
