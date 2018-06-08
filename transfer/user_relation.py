@@ -91,14 +91,14 @@ class UserRelationProcess(BlockProcess):
             cur2 = await db2.cursor()
             if self.prepared_data['data'] != []:
                 sql_main_data = '''
-                    insert into user_relations
+                    insert ignore into user_relations
                         (follower_id, following_id, what, created_at)
                     values
                         (%s, %s, %s, %s)'''
                 await cur2.executemany(sql_main_data, self.prepared_data['data'])
             if self.prepared_data['undo'] != []:
                 sql_undo_data = '''
-                    insert into undo_op
+                    insert ignore into undo_op
                         (block_num, transaction_id, op_index, op, task_type)
                     values
                         (%s, %s, %s, %s, %s)'''

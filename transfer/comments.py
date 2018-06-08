@@ -170,7 +170,7 @@ class CommentsProcess(BlockProcess):
             cur2 = await db2.cursor()
             if self.prepared_data['data'] != []:
                 sql_main_data = '''
-                    insert into comments
+                    insert ignore into comments
                         (
                             parent_id,
                             permlink,

@@ -119,7 +119,7 @@ class VotesProcess(BlockProcess):
                     if val[0] == 'comment':
                         comments_votes.append(val[1])
                 sql_post_data = '''
-                    insert into posts_votes
+                    insert ignore into posts_votes
                         (
                             post_id,
                             user_id,
@@ -132,7 +132,7 @@ class VotesProcess(BlockProcess):
                         (%s, %s, %s, %s, %s, %s)'''
                 await cur2.executemany(sql_post_data, posts_votes)
                 sql_comment_data = '''
-                    insert into comments_votes
+                    insert ignore into comments_votes
                         (
                             comment_id,
                             user_id,

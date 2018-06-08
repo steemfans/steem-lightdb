@@ -133,7 +133,7 @@ class PostsProcess(BlockProcess):
             cur2 = await db2.cursor()
             if self.prepared_data['data'] != []:
                 sql_main_data = '''
-                    insert into posts
+                    insert ignore into posts
                         (main_tag_id, author_id, permlink, title, body, json_metadata, created_at, updated_at, is_del)
                     values
                         (%s, %s, %s, %s, %s, %s, %s, %s, %s)'''
