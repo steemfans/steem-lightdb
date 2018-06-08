@@ -6,6 +6,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 /**
  * @ORM\Entity(repositoryClass="App\Repository\UndoOpRepository")
+ * @ORM\Table(indexes={@ORM\Index(name="task_type_idx", columns={"task_type"})})
  */
 class UndoOp
 {
