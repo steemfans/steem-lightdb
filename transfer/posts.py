@@ -48,7 +48,7 @@ class PostsProcess(BlockProcess):
                         # edit
                         dmp.patch_fromText(body);
                         self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type)))
-                        #print('do_later_edit', block_num, trans_id, op_idx)
+                        print('do_later_edit', block_num, trans_id, op_idx)
                         continue
                     except ValueError as e:
                         permlink = op_detail['permlink']
@@ -71,10 +71,10 @@ class PostsProcess(BlockProcess):
                                 is_del,))
                         else:
                             self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type)))
-                            #print('do_later_edit2', block_num, trans_id, op_idx)
+                            print('do_later_edit2', block_num, trans_id, op_idx)
                 elif op_type == 'delete_comment':
                     self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type)))
-                    #print('do_later_del', block_num, trans_id, op_idx)
+                    print('do_later_del', block_num, trans_id, op_idx)
             except Exception as e:
                 utils.PrintException([block_num, trans_id, op_idx, e])
                 return False

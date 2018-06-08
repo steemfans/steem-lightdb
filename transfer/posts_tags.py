@@ -40,12 +40,13 @@ class PostsTagsProcess(BlockProcess):
                         continue
 
                     if 'tags' in json_metadata:
-                        for tag in json_metadata['tags']:
-                            tag_id = await self.getId('tags', tag)
-                            if tag_id != None:
-                                self.processed_data['data'].append((post_id, tag_id))
+                        if isinstance(json_metadata['tags'], list):
+                            for tag in json_metadata['tags']:
+                                tag_id = await self.getId('tags', tag)
+                                if tag_id != None:
+                                    self.processed_data['data'].append((post_id, tag_id))
             except Exception as e:
-                utils.PrintException(e)
+                utils.PrintException([block_num, trans_id, op_idx, op])
                 return False
         # print('processed:', self.processed_data)
         return self.processed_data
