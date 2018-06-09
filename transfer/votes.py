@@ -31,15 +31,23 @@ class VotesProcess(BlockProcess):
                     weight = op_detail['weight']
                     created_at = block_time
                     updated_at = block_time
+                    voter_id = await self.getId('users', op_detail['voter'])
+                    print(trans_id, op_idx, 'voter_id:', voter_id)
+                    if voter_id == None:
+                        self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type)))
+                        continue
                     post_id = await self.getId('posts', (op_detail['author'], op_detail['permlink']))
+                    print(trans_id, op_idx, 'post_id:', post_id)
                     if post_id == None:
                         comment_id = await self.getId('comments', (op_detail['author'], op_detail['permlink']))
+                        print(trans_id, op_idx, 'comment_id:', comment_id)
                         if comment_id == None:
                             self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type)))
                             continue
                         else:
                             # vote to comment
-                            vote_id = self.getId('comments_votes', comment_id)
+                            vote_id = self.getId('comments_votes', (voter_id, comment_id))
+                            print(trans_id, op_idx, 'vote_id:', vote_id)
                             if vote_id != None:
                                 # edit vote
                                 self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type)))
@@ -53,7 +61,7 @@ class VotesProcess(BlockProcess):
                                     updown = False 
                                 self.processed_data['data'].append(('comment', (comment_id, voter_id, weight, updown, created_at, updated_at)))
                     else:
-                        vote_id = self.getId('posts_votes', post_id)
+                        vote_id = self.getId('posts_votes', (voter_id, post_id))
                         if vote_id != None:
                             # edit vote
                             self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type)))
@@ -87,10 +95,13 @@ class VotesProcess(BlockProcess):
                     and comments.permlink = %s'''
         elif table == 'comments_votes':
             sql = '''select id from comments_votes 
-                where comment_id = %s'''
+                where user_id = %s and comment_id = %s'''
         elif table == 'posts_votes':
             sql = '''select id from posts_votes 
-                where post_id = %s'''
+                where user_id = %s and post_id = %s'''
+        elif table == 'users':
+            sql = '''select id from users
+                where username = %s'''
         else:
             return None
         
