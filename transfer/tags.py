@@ -34,7 +34,7 @@ class TagProcess(BlockProcess):
                         if 'tags' in json_metadata:
                             for tag in json_metadata['tags']:
                                 if await self.checkExist(tag) == False:
-                                    print('tag:', tag)
+                                    #print('tag:', tag)
                                     self.processed_data['data'].append((tag, ))
                     else:
                         print('invalid json_metadata:', json_metadata)
