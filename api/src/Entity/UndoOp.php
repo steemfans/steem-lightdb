@@ -47,6 +47,11 @@ class UndoOp
      */
     private $count;
 
+    /**
+     * @ORM\Column(type="integer")
+     */
+    private $block_time;
+
     public function getId()
     {
         return $this->id;
@@ -120,6 +125,18 @@ class UndoOp
     public function setCount(int $count): self
     {
         $this->count = $count;
+
+        return $this;
+    }
+
+    public function getBlockTime(): ?int
+    {
+        return $this->block_time;
+    }
+
+    public function setBlockTime(int $block_time): self
+    {
+        $this->block_time = $block_time;
 
         return $this;
     }
