@@ -22,6 +22,14 @@ def get_config():
     if c['slice_step'] == 0:
         c['slice_step'] = 50
 
+    c['undo_count'] = int(env_dist.get('UNDO_COUNT'))
+    if c['undo_count'] == 0:
+        c['undo_count'] = 50
+    
+    c['undo_limit'] = int(env_dist.get('UNDO_LIMIT'))
+    if c['undo_limit'] == 0:
+        c['undo_limit'] = 50
+
     try:
         c['steemdb_config'] = json.loads(env_dist.get('STEEMDB_CONFIG'))
     except:
