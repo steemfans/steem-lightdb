@@ -35,12 +35,12 @@ class CommentsProcess(BlockProcess):
                     parent_author_id = await self.getId('users', op_detail['parent_author'])
                     if parent_author_id == None:
                         # parent_author has not been inserted into users table.
-                        self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type)))
+                        self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type), block_time))
                         continue
                     author_id = await self.getId('users', op_detail['author'])
                     if author_id == None:
                         # author has not been inserted into users table.
-                        self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type)))
+                        self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type), block_time))
                         continue
                     permlink = op_detail['permlink']
                     title = op_detail['title']
@@ -51,7 +51,7 @@ class CommentsProcess(BlockProcess):
                     try:
                         # if patch_fromText successed, this comment is edited.
                         dmp.patch_fromText(body)
-                        self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type)))
+                        self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type), block_time))
                         continue
                     except:
                         parent_permlink = op_detail['parent_permlink']
@@ -63,7 +63,7 @@ class CommentsProcess(BlockProcess):
                                 post_id = await self.getId('posts', (parent_author_id, parent_permlink))
                                 if post_id == None:
                                     # data not prepared
-                                    self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type)))
+                                    self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type), block_time))
                                     continue
                                 else:
                                     # This is a parent comment
@@ -87,7 +87,7 @@ class CommentsProcess(BlockProcess):
                                 post_id = await self.getId('posts', (parent_author_id, parent_permlink))
                                 if post_id == None:
                                     # data not prepared
-                                    self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type)))
+                                    self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type), block_time))
                                     continue
                                 else:
                                     # This is a child comment
@@ -106,7 +106,7 @@ class CommentsProcess(BlockProcess):
                                         is_del))
                         else:
                             # this comment is edited and does not use diff_match_patch
-                            self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type)))
+                            self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type), block_time))
                             continue
 
             except Exception as e:
@@ -190,9 +190,9 @@ class CommentsProcess(BlockProcess):
             if self.prepared_data['undo'] != []:
                 sql_undo_data = '''
                     insert ignore into undo_op
-                        (block_num, transaction_id, op_index, op, task_type)
+                        (block_num, transaction_id, op_index, op, task_type, block_time)
                     values
-                        (%s, %s, %s, %s, %s)'''
+                        (%s, %s, %s, %s, %s, %s)'''
                 await cur2.executemany(sql_undo_data, self.prepared_data['undo'])
             sql_update_task = '''
                 update multi_tasks set is_finished = 1

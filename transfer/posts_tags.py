@@ -31,7 +31,7 @@ class PostsTagsProcess(BlockProcess):
                     json_metadata = op_detail['json_metadata']
                     post_id = await self.getId('posts', (op_detail['author'], op_detail['permlink']))
                     if post_id == None:
-                        self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type)))
+                        self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type), block_time))
                         continue
                     try:
                         json_metadata = json.loads(op_detail['json_metadata'])
@@ -91,9 +91,9 @@ class PostsTagsProcess(BlockProcess):
             if self.prepared_data['undo'] != []:
                 sql_undo_data = '''
                     insert ignore into undo_op
-                        (block_num, transaction_id, op_index, op, task_type)
+                        (block_num, transaction_id, op_index, op, task_type, block_time)
                     values
-                        (%s, %s, %s, %s, %s)'''
+                        (%s, %s, %s, %s, %s, %s)'''
                 await cur2.executemany(sql_undo_data, self.prepared_data['undo'])
             sql_update_task = '''
                 update multi_tasks set is_finished = 1

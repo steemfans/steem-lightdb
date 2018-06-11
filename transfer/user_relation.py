@@ -74,7 +74,7 @@ class UserRelationProcess(BlockProcess):
                                 following_id = user[0]
                         self.processed_data['data'].append((follower_id, following_id, what, block_time, ))
                     else:
-                        self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type)))
+                        self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type), block_time))
                 except Exception as e:
                     utils.PrintException([block_num, trans_id, op_idx])
                     return False
@@ -99,9 +99,9 @@ class UserRelationProcess(BlockProcess):
             if self.prepared_data['undo'] != []:
                 sql_undo_data = '''
                     insert ignore into undo_op
-                        (block_num, transaction_id, op_index, op, task_type)
+                        (block_num, transaction_id, op_index, op, task_type, block_time)
                     values
-                        (%s, %s, %s, %s, %s)'''
+                        (%s, %s, %s, %s, %s, %s)'''
                 await cur2.executemany(sql_undo_data, self.prepared_data['undo'])
             sql_update_task = '''
                 update multi_tasks set is_finished = 1

@@ -34,7 +34,7 @@ class VotesProcess(BlockProcess):
                     voter_id = await self.getId('users', op_detail['voter'])
                     #print(trans_id, op_idx, 'voter_id:', voter_id)
                     if voter_id == None:
-                        self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type)))
+                        self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type), block_time))
                         continue
                     post_id = await self.getId('posts', (op_detail['author'], op_detail['permlink']))
                     #print(trans_id, op_idx, 'post_id:', post_id)
@@ -42,7 +42,7 @@ class VotesProcess(BlockProcess):
                         comment_id = await self.getId('comments', (op_detail['author'], op_detail['permlink']))
                         #print(trans_id, op_idx, 'comment_id:', comment_id)
                         if comment_id == None:
-                            self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type)))
+                            self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type), block_time))
                             continue
                         else:
                             # vote to comment
@@ -50,7 +50,7 @@ class VotesProcess(BlockProcess):
                             #print(trans_id, op_idx, 'vote_id:', vote_id)
                             if vote_id != None:
                                 # edit vote
-                                self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type)))
+                                self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type), block_time))
                                 continue
                             else:
                                 # insert comment vote
@@ -64,7 +64,7 @@ class VotesProcess(BlockProcess):
                         vote_id = await self.getId('posts_votes', (voter_id, post_id))
                         if vote_id != None:
                             # edit vote
-                            self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type)))
+                            self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type), block_time))
                             continue
                         else:
                             # insert post vote
@@ -158,9 +158,9 @@ class VotesProcess(BlockProcess):
             if self.prepared_data['undo'] != []:
                 sql_undo_data = '''
                     insert ignore into undo_op
-                        (block_num, transaction_id, op_index, op, task_type)
+                        (block_num, transaction_id, op_index, op, task_type, block_time)
                     values
-                        (%s, %s, %s, %s, %s)'''
+                        (%s, %s, %s, %s, %s, %s)'''
                 await cur2.executemany(sql_undo_data, self.prepared_data['undo'])
             sql_update_task = '''
                 update multi_tasks set is_finished = 1

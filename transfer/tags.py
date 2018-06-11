@@ -81,9 +81,9 @@ class TagProcess(BlockProcess):
             if self.prepared_data['undo'] != []:
                 sql_undo_data = '''
                     insert ignore into undo_op
-                        (block_num, transaction_id, op_index, op, task_type)
+                        (block_num, transaction_id, op_index, op, task_type, block_time)
                     values
-                        (%s, %s, %s, %s, %s)'''
+                        (%s, %s, %s, %s, %s, %s)'''
                 await cur2.executemany(sql_undo_data, self.prepared_data['undo'])
             sql_update_task = '''
                 update multi_tasks set is_finished = 1
