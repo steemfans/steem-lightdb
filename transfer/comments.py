@@ -58,8 +58,8 @@ class CommentsProcess(BlockProcess):
                         is_exist = await self.checkExist(author_id, permlink)
                         if is_exist == False:
                             # this comment is a new comment.
-                            parent_comment_id = await self.getId('comments', (parent_author_id, parent_permlink))
-                            if parent_comment_id == None:
+                            parent_comment = await self.getData('comments', (parent_author_id, parent_permlink))
+                            if parent_comment == None:
                                 post_id = await self.getId('posts', (parent_author_id, parent_permlink))
                                 if post_id == None:
                                     # data not prepared
@@ -71,7 +71,7 @@ class CommentsProcess(BlockProcess):
                                     title = op_detail['title']
                                     body = op_detail['body']
                                     self.processed_data['data'].append((
-                                        parent_comment_id,
+                                        None,
                                         permlink,
                                         title,
                                         body,
@@ -84,26 +84,20 @@ class CommentsProcess(BlockProcess):
                                         updated_at,
                                         is_del))
                             else:
-                                post_id = await self.getId('posts', (parent_author_id, parent_permlink))
-                                if post_id == None:
-                                    # data not prepared
-                                    self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type), block_time))
-                                    continue
-                                else:
-                                    # This is a child comment
-                                    self.processed_data['data'].append((
-                                        parent_comment_id,
-                                        permlink,
-                                        title,
-                                        body,
-                                        json_metadata,
-                                        post_id,
-                                        parent_author_id,
-                                        author_id,
-                                        parent_permlink,
-                                        created_at,
-                                        updated_at,
-                                        is_del))
+                                # This is a child comment
+                                self.processed_data['data'].append((
+                                    parent_comment[0],
+                                    permlink,
+                                    title,
+                                    body,
+                                    json_metadata,
+                                    parent_comment[6],
+                                    parent_author_id,
+                                    author_id,
+                                    parent_permlink,
+                                    created_at,
+                                    updated_at,
+                                    is_del))
                         else:
                             # this comment is edited and does not use diff_match_patch
                             self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type), block_time))
@@ -160,6 +154,21 @@ class CommentsProcess(BlockProcess):
                 return None
             else:
                 return data[0]
+        except:
+            return None
+
+    async def getData(self, table, val):
+        db2 = self.db2
+        if table == 'comments':
+            sql = '''select * from comments
+                where author_id = %s and permlink = %s'''
+        else:
+            return None
+
+        try:
+            cur2 = await db2.cursor()
+            await cur2.execute(sql, val)
+            return await cur2.fetchone()
         except:
             return None
 
