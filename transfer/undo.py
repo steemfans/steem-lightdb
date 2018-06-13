@@ -29,8 +29,9 @@ async def parsePost(val):
             print('get_in_post')
             main_tag_id = await getId('tags', op_detail['parent_permlink'])
             if main_tag_id == None:
-                print('none_main_tag_id')
-                return await updateCount(undo_id)
+                print('none_main_tag_id_insert_it')
+                await insertData('tags', None, (op_detail['parent_permlink'],))
+                main_tag_id = await getId('tags', op_detail['parent_permlink'])
             author_id = await getId('users', op_detail['author'])
             if author_id == None:
                 print('none_main_author_id')
@@ -144,14 +145,9 @@ async def parseComment(val):
                 print('old_comment1:', undo_id)
                 old_body = old_comment[4] # body
                 new_body = dmp.patch_apply(patches, old_body);
-                parent_comment = await getData('comments', (parent_author_id, op_detail['parent_permlink']))
-                if parent_comment == None:
-                    parent_comment_id = None
-                else:
-                    parent_comment_id = parent_comment[0]
                 print('dmp_edit_comment', block_num, trans_id, op_idx, old_comment[0])
                 return await updateData('comments', old_comment[0], undo_id, (
-                    parent_comment_id,
+                    old_comment[1],
                     op_detail['permlink'],
                     op_detail['title'],
                     new_body,
@@ -548,6 +544,11 @@ async def insertData(table, undo_id, val):
             (follower_id, following_id, what, created_at)
             values
             (%s, %s, %s, %s)'''
+    elif table == 'tags':
+        sql = '''insert into tags
+            (tag_name)
+            values
+            (%s)'''
     else:
         return None
 
@@ -558,8 +559,9 @@ async def insertData(table, undo_id, val):
         cur = await conn.cursor()
         #update data
         await cur.execute(sql, val)
-        #remove undo_op
-        await cur.execute(remove_undo_op_sql, undo_id)
+        if undo_id != None:
+            #remove undo_op
+            await cur.execute(remove_undo_op_sql, undo_id)
         await conn.commit()
         await cur.close()
         return True
