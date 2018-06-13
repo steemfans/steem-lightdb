@@ -31,6 +31,10 @@ def get_config():
     if c['undo_limit'] == 0:
         c['undo_limit'] = 50
 
+    c['undo_sleep'] = int(env_dist.get('UNDO_SLEEP'))
+    if c['undo_sleep'] == 0:
+        c['undo_sleep'] = 5
+
     try:
         c['steemdb_config'] = json.loads(env_dist.get('STEEMDB_CONFIG'))
     except:

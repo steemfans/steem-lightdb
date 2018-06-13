@@ -689,6 +689,7 @@ async def processor(loop, config):
 
         undo_count = config['undo_count']
         undo_limit = config['undo_limit']
+        undo_sleep = config['undo_sleep']
         #get undo op
         sql = '''select * from undo_op
             where count <= %s
@@ -734,7 +735,7 @@ async def processor(loop, config):
 
         conn.close()
         conn = None
-        time.sleep(3)
+        time.sleep(undo_sleep)
 
 def mainMultiProcess():
     config = utils.get_config()
