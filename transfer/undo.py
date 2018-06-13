@@ -8,6 +8,7 @@ from multiprocessing import Pool
 from concurrent.futures import ThreadPoolExecutor,ProcessPoolExecutor
 from contextlib import suppress
 import diff_match_patch as dmp_module
+import traceback
 
 conn = None
 
@@ -581,7 +582,7 @@ async def updateData(table, old_id, undo_id, val):
                 created_at = %s,
                 updated_at = %s,
                 is_del = %s
-            where id = {id}'''.format({'id': old_id})
+            where id = {}'''.format(old_id)
     elif table == 'comments':
         sql = '''update comments
             set parent_id = %s,
@@ -596,7 +597,7 @@ async def updateData(table, old_id, undo_id, val):
                 created_at = %s,
                 updated_at = %s,
                 is_del = %s
-            where id = {id}'''.format({'id': old_id})
+            where id = {}'''.format(old_id)
     elif table == 'comments_votes':
         sql = '''update comments_votes
             set comment_id = %s,
@@ -605,7 +606,7 @@ async def updateData(table, old_id, undo_id, val):
                 updown = %s,
                 created_at = %s,
                 updated_at = %s
-            where id = {id}'''.format({'id': old_id})
+            where id = {}'''.format(old_id)
     elif table == 'posts_votes':
         sql = '''update posts_votes
             set post_id = %s,
@@ -614,7 +615,7 @@ async def updateData(table, old_id, undo_id, val):
                 updown = %s,
                 created_at = %s,
                 updated_at = %s
-            where id = {id}'''.format({'id': old_id})
+            where id = {}'''.format(old_id)
     else:
         return None
 

@@ -2,6 +2,7 @@
 #encoding:UTF-8
 
 import json, os, sys, time, linecache
+import traceback
 
 def get_config():
     c = {}
@@ -54,4 +55,4 @@ def PrintException(msg=''):
     filename = f.f_code.co_filename
     linecache.checkcache(filename)
     line = linecache.getline(filename, lineno, f.f_globals)
-    print('EXCEPTION IN ({}, LINE {} "{}"): {}, {}'.format(filename, lineno, line.strip(), exc_obj, msg))
+    print('EXCEPTION IN ({}, LINE {} "{}"): {}, {}, {}'.format(filename, lineno, line.strip(), exc_obj, msg, traceback.print_exc()))
