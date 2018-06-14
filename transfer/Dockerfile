@@ -2,7 +2,6 @@ FROM alpine:3.7
 WORKDIR /app
 RUN apk --no-cache add python3 python3-dev gcc git musl-dev libffi-dev openssl-dev \
         && pip3 install steem \
-        && pip3 install py3-requests \
         && pip3 install pymysql \
         && pip3 install aiomysql \
         && pip3 install diff_match_patch
