@@ -31,6 +31,7 @@ def get():
             curr_cache_head = 0
         else:
             curr_cache_head = int(res['block_num'])
+    db.close()
 
     print('curr_cache_head: ', curr_cache_head)
 
