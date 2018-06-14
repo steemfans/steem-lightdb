@@ -11,6 +11,7 @@ ENV WORKER=5 \
            UNDO_LIMIT=50 \
            UNDO_COUNT=50 \
            UNDO_SLEEP=5 \
+           BASE_SLEEP=3 \
            STEEMDB_CONFIG='{"host": "steem-lightdb.com", "port": 3306, "user": "steem", "pass": "steem", "db": "steemdb"}' \
            STEEM_CONFIG='{"host": "172.20.0.4", "port": 3306, "user": "root", "pass": "123456", "db": "steem"}'
 COPY . /app
