@@ -24,7 +24,7 @@ async def parsePost(val):
     try:
         op_type = op[0]
         op_detail = op[1]
-        print('parse_post:', undo_id)
+        print('parse_post:', op_detail, undo_id)
         if op_type == 'comment' and op_detail['parent_author'] == '':
             print('get_in_post')
             main_tag_id = await getId('tags', op_detail['parent_permlink'])
@@ -117,7 +117,7 @@ async def parseComment(val):
     try:
         op_type = op[0]
         op_detail = op[1]
-        print('parse_comment:', undo_id)
+        print('parse_comment:', op_detail, undo_id)
         if op_type == 'comment' and op_detail['parent_author'] != '':
             print('get_in_comment')
             parent_author_id = await getId('users', op_detail['parent_author'])
@@ -129,22 +129,17 @@ async def parseComment(val):
                 # author has not been inserted into users table.
                 return await updateCount(undo_id)
 
-            permlink = op_detail['permlink']
-            title = op_detail['title']
-
             # check if comment edit through body dmp
-            body = op_detail['body']
             dmp = dmp_module.diff_match_patch()
             try:
                 # if patch_fromText successed, this comment is edited.
-                patches = dmp.patch_fromText(body);
+                patches = dmp.patch_fromText(op_detail['body']);
                 old_comment = await getData('comments', (author_id, op_detail['permlink']))
                 if old_comment == None:
-                    print('comment_not_exist', undo_id)
+                    print('comment_not_exist_dmp', undo_id)
                     return await updateCount(undo_id)
-                print('old_comment1:', undo_id)
-                old_body = old_comment[4] # body
-                new_body = dmp.patch_apply(patches, old_body);
+                print('old_comment_dmp:', undo_id)
+                new_body = dmp.patch_apply(patches, old_comment[4]);
                 print('dmp_edit_comment', block_num, trans_id, op_idx, old_comment[0])
                 return await updateData('comments', old_comment[0], undo_id, (
                     old_comment[1],
@@ -160,14 +155,13 @@ async def parseComment(val):
                     block_time,
                     False))
             except ValueError as e:
-                parent_permlink = op_detail['parent_permlink']
                 old_comment = await getData('comments', (author_id, op_detail['permlink']))
                 if old_comment == None:
                     print('comment_not_exist2', undo_id)
                     # this comment is a new comment.
-                    parent_comment = await getData('comments', (parent_author_id, parent_permlink))
+                    parent_comment = await getData('comments', (parent_author_id, op_detail['parent_permlink']))
                     if parent_comment == None:
-                        post_id = await getId('posts', (parent_author_id, parent_permlink))
+                        post_id = await getId('posts', (parent_author_id, op_detail['parent_permlink']))
                         if post_id == None:
                             # data not prepared
                             print('data_not_prepared1', block_num, trans_id, op_idx)
@@ -184,13 +178,13 @@ async def parseComment(val):
                                 post_id, # post_id
                                 parent_author_id, # parent_author_id
                                 author_id, # author_id
-                                parent_permlink, # parent_permlink
+                                op_detail['parent_permlink'], # parent_permlink
                                 block_time, # created_at
                                 block_time, # updated_at
                                 False))
                     else:
                         # This is a new child comment
-                        print('new_child_comment', block_num, trans_id, op_idx)
+                        print('new_child_comment', block_num, trans_id, op_idx, parent_comment[0])
                         return await insertData('comments', undo_id, (
                             parent_comment[0],
                             op_detail['permlink'],
@@ -200,7 +194,7 @@ async def parseComment(val):
                             parent_comment[6], # post_id
                             parent_author_id, # parent_author_id
                             author_id, # author_id
-                            parent_permlink, # parent_permlink
+                            op_detail['parent_permlink'], # parent_permlink
                             block_time, # created_at
                             block_time, # updated_at
                             False))

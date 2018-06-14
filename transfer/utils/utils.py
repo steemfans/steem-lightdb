@@ -39,6 +39,10 @@ def get_config():
     if c['base_sleep'] == 0:
         c['base_sleep'] = 3
 
+    c['base_step'] = int(env_dist.get('BASE_STEP'))
+    if c['base_step'] == 0:
+        c['base_step'] = 1000
+
     try:
         c['steemdb_config'] = json.loads(env_dist.get('STEEMDB_CONFIG'))
     except:
