@@ -43,6 +43,14 @@ def get_config():
     if c['base_step'] == 0:
         c['base_step'] = 1000
 
+    c['base_slice_step'] = int(env_dist.get('BASE_SLICE_STEP'))
+    if c['base_slice_step'] == 0:
+        c['base_slice_step'] = 50
+    
+    c['base_thread_count'] = int(env_dist.get('BASE_THREAD_COUNT'))
+    if c['base_thread_count'] == 0:
+        c['base_thread_count'] = 20
+
     try:
         c['steemdb_config'] = json.loads(env_dist.get('STEEMDB_CONFIG'))
     except:
