@@ -43,7 +43,9 @@ def get():
     # get lastest block_num
     steemd_nodes = [
         'https://rpc.buildteam.io',
+        'https://steemd.privex.io',
         'https://api.steemit.com',
+        'https://rpc.steemviz.com',
     ]
     s = Steemd(nodes=steemd_nodes)
     b = Blockchain(s)

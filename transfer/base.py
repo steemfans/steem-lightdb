@@ -17,7 +17,9 @@ base_thread_count = config['base_thread_count']
 
 steemd_nodes = [
     'https://rpc.buildteam.io',
+    'https://steemd.privex.io',
     'https://api.steemit.com',
+    'https://rpc.steemviz.com',
 ]
 s = Steemd(nodes=steemd_nodes, maxsize=base_step*base_thread_count)
 b = Blockchain(s)
