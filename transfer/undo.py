@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 #encoding:UTF-8
 import json, os, sys, time
-import utils.tasks as tasks
+import utils.TransferTasks as tasks
 import utils.utils as utils
 import asyncio, aiomysql
 from multiprocessing import Pool
