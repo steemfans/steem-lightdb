@@ -29,19 +29,9 @@ class Users
     private $json_metadata;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Posts", mappedBy="author")
-     */
-    private $posts;
-
-    /**
      * @ORM\OneToMany(targetEntity="App\Entity\Comments", mappedBy="author")
      */
     private $comments;
-
-    /**
-     * @ORM\OneToMany(targetEntity="App\Entity\PostsVotes", mappedBy="user")
-     */
-    private $postsVotes;
 
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\UserRelations", mappedBy="follower")

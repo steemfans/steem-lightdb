@@ -24,60 +24,8 @@ class Tags
     private $tag_name;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Posts", mappedBy="main_tag")
+     * @ORM\OneToMany(targetEntity="App\Entity\Comments", mappedBy="tags")
      */
-    private $posts;
+    private $comments;
 
-    public function __construct()
-    {
-        $this->posts = new ArrayCollection();
-    }
-
-    public function getId()
-    {
-        return $this->id;
-    }
-
-    public function getTagName(): ?string
-    {
-        return $this->tag_name;
-    }
-
-    public function setTagName(string $tag_name): self
-    {
-        $this->tag_name = $tag_name;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection|Posts[]
-     */
-    public function getPosts(): Collection
-    {
-        return $this->posts;
-    }
-
-    public function addPost(Posts $post): self
-    {
-        if (!$this->posts->contains($post)) {
-            $this->posts[] = $post;
-            $post->setMainTag($this);
-        }
-
-        return $this;
-    }
-
-    public function removePost(Posts $post): self
-    {
-        if ($this->posts->contains($post)) {
-            $this->posts->removeElement($post);
-            // set the owning side to null (unless already changed)
-            if ($post->getMainTag() === $this) {
-                $post->setMainTag(null);
-            }
-        }
-
-        return $this;
-    }
 }
