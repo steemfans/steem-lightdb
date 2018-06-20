@@ -62,7 +62,7 @@ class Comments
     private $parent_author;
 
     /**
-     * @ORM\Column(type="string", length=500)
+     * @ORM\Column(type="string", length=500, nullable=true)
      */
     private $parent_author_text;
 
@@ -78,7 +78,7 @@ class Comments
     private $author;
 
     /**
-     * @ORM\Column(type="string", length=500)
+     * @ORM\Column(type="string", length=500, nullable=true)
      */
     private $author_text;
 
