@@ -16,8 +16,7 @@ class UserRelationProcess(BlockProcess):
         super().__init__(loop, data_type)
     async def process(self, block_num, block_time, trans_id, ops):
         global task_type
-        db1 = self.db1
-        db2 = self.db2
+        db = self.db
         # print('process %i blcok\'s ops' % block_num, ops)
         self.processed_data = {
             'data': [],
@@ -61,10 +60,10 @@ class UserRelationProcess(BlockProcess):
                         select id, username from users
                         where username = %s or username = %s'''
 
-                    cur2 = await db2.cursor()
-                    await cur2.execute(sql, (follower, following))
-                    user_data = await cur2.fetchall()
-                    await cur2.close()
+                    cur = await db.cursor()
+                    await cur.execute(sql, (follower, following))
+                    user_data = await cur.fetchall()
+                    await cur.close()
 
                     if len(user_data) == 2:
                         for user in user_data:
@@ -85,32 +84,32 @@ class UserRelationProcess(BlockProcess):
         return self.processed_data
 
     async def insertData(self):
-        db1 = self.db1
-        db2 = self.db2
+        db = self.db
         try:
-            cur2 = await db2.cursor()
+            cur = await db.cursor()
             if self.prepared_data['data'] != []:
                 sql_main_data = '''
                     insert ignore into user_relations
                         (follower_id, following_id, what, created_at)
                     values
                         (%s, %s, %s, %s)'''
-                await cur2.executemany(sql_main_data, self.prepared_data['data'])
+                await cur.executemany(sql_main_data, self.prepared_data['data'])
             if self.prepared_data['undo'] != []:
                 sql_undo_data = '''
                     insert ignore into undo_op
                         (block_num, transaction_id, op_index, op, task_type, block_time)
                     values
                         (%s, %s, %s, %s, %s, %s)'''
-                await cur2.executemany(sql_undo_data, self.prepared_data['undo'])
+                await cur.executemany(sql_undo_data, self.prepared_data['undo'])
             sql_update_task = '''
                 update multi_tasks set is_finished = 1
                 where id = %s'''
-            await cur2.execute(sql_update_task, (self.task_id))
-            await db2.commit()
-            await cur2.close()
+            await cur.execute(sql_update_task, (self.task_id))
+            await db.commit()
+            await cur.close()
         except Exception as e:
-            await db2.rollback()
+            await db.rollback()
+            await cur.close()
             print('insert_data_failed', 'task_id:', self.task_id, e)
 
 def processor(all_tasks):

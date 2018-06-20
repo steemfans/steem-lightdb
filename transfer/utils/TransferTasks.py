@@ -7,10 +7,10 @@ import utils.utils as utils
 
 task_type = {
     'user': 1,
-    'post': 2,
+    #'post': 2,
     'comment': 3,
     'tag': 4,
-    'post_tag': 5,
+    'comment_tag': 5,
     'vote': 6,
     'user_relation': 7}
 

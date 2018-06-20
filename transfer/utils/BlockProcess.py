@@ -12,29 +12,18 @@ class BlockProcess(object):
     async def doMultiTasks(self, task):
         try:
             config = self.config
-            db1_c = config['steemdb_config']
-            db2_c = config['steem_config']
+            db_c = config['steem_config']
 
-            db1 = await aiomysql.connect(
-                    host=db1_c['host'],
-                    port=db1_c['port'],
-                    user=db1_c['user'],
-                    password=db1_c['pass'],
+            db = await aiomysql.connect(
+                    host=db_c['host'],
+                    port=db_c['port'],
+                    user=db_c['user'],
+                    password=db_c['pass'],
                     charset='utf8mb4',
-                    db=db1_c['db'],
+                    db=db_c['db'],
                     autocommit=False,
                     loop=self.loop)
-            db2 = await aiomysql.connect(
-                    host=db2_c['host'],
-                    port=db2_c['port'],
-                    user=db2_c['user'],
-                    password=db2_c['pass'],
-                    charset='utf8mb4',
-                    db=db2_c['db'],
-                    autocommit=False,
-                    loop=self.loop)
-            self.db1 = db1
-            self.db2 = db2
+            self.db = db
 
             task_start_time = time.time()
 
@@ -45,13 +34,13 @@ class BlockProcess(object):
 
             # prepare data
             sql = '''
-                select block_num, block_info, timestamp from blocks
+                select block_num, block_info, timestamp from block_cache
                 where block_num >= %s and block_num <= %s
                 order by block_num asc'''
-            cur1 = await db1.cursor()
-            await cur1.execute(sql, (self.block_from, self.block_to))
-            blocks = await cur1.fetchall()
-            await cur1.close()
+            cur = await db.cursor()
+            await cur.execute(sql, (self.block_from, self.block_to))
+            blocks = await cur.fetchall()
+            await cur.close()
             self.prepared_data = {
                 'data': [],
                 'undo': []}
@@ -61,17 +50,9 @@ class BlockProcess(object):
                 curr_block_info = json.loads(block[1])
                 curr_block_timestamp = utils.strtotime(block[2])
                 if curr_block_info['transaction_ids'] != []:
-                    sql = '''
-                        select block_num, content from transactions
-                        where block_num = %s
-                        order by id asc'''
-                    cur1 = await db1.cursor()
-                    await cur1.execute(sql, (curr_block_num))
-                    curr_block_all_transactions = await cur1.fetchall()
-                    await cur1.close()
-                    for idx, trans in enumerate(curr_block_all_transactions):
+                    for idx, trans in enumerate(curr_block_info['transactions']):
                         curr_block_trans_id = curr_block_info['transaction_ids'][idx]
-                        curr_block_trans = json.loads(trans[1])
+                        curr_block_trans = trans
                         processed_data = await self.process(
                             curr_block_num,
                             curr_block_timestamp,
@@ -95,10 +76,8 @@ class BlockProcess(object):
                 await self.insertData()
 
             # end task
-            db1.close()
-            db2.close()
-            self.db1 = None
-            self.db2 = None
+            db.close()
+            self.db = None
             task_end_time = time.time()
             print('task_id:', self.task_id, 'db closed', 'task_spent:', task_end_time - task_start_time)
         except Exception as e:

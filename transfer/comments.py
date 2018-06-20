@@ -17,8 +17,7 @@ class CommentsProcess(BlockProcess):
         super().__init__(loop, data_type)
     async def process(self, block_num, block_time, trans_id, ops):
         global task_type
-        db1 = self.db1
-        db2 = self.db2
+        db = self.db
         # print('process %i blcok\'s ops' % block_num)
         self.processed_data = {
             'data': [],
@@ -27,21 +26,14 @@ class CommentsProcess(BlockProcess):
             try:
                 op_type = op[0]
                 op_detail = op[1]
-                if op_type == 'comment' and op_detail['parent_author'] != '':
+                if op_type == 'comment':
                     created_at = block_time
                     updated_at = block_time
                     is_del = False
                     json_metadata = op_detail['json_metadata']
-                    parent_author_id = await self.getId('users', op_detail['parent_author'])
-                    if parent_author_id == None:
-                        # parent_author has not been inserted into users table.
-                        self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type), block_time))
-                        continue
-                    author_id = await self.getId('users', op_detail['author'])
-                    if author_id == None:
-                        # author has not been inserted into users table.
-                        self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type), block_time))
-                        continue
+                    parent_author_text = op_detail['parent_author']
+                    parent_permlink = op_detail['parent_permlink']
+                    author_text = op_detail['author']
                     permlink = op_detail['permlink']
                     title = op_detail['title']
 
@@ -54,55 +46,28 @@ class CommentsProcess(BlockProcess):
                         self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type), block_time))
                         continue
                     except:
-                        parent_permlink = op_detail['parent_permlink']
-                        is_exist = await self.checkExist(author_id, permlink)
+                        is_exist = await self.checkExist(author_text, permlink)
                         if is_exist == False:
                             # this comment is a new comment.
-                            parent_comment = await self.getData('comments', (parent_author_id, parent_permlink))
-                            if parent_comment == None:
-                                post_id = await self.getId('posts', (parent_author_id, parent_permlink))
-                                if post_id == None:
-                                    # data not prepared
-                                    self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type), block_time))
-                                    continue
-                                else:
-                                    # This is a parent comment
-                                    permlink = op_detail['permlink']
-                                    title = op_detail['title']
-                                    body = op_detail['body']
-                                    self.processed_data['data'].append((
-                                        None,
-                                        permlink,
-                                        title,
-                                        body,
-                                        json_metadata,
-                                        post_id,
-                                        parent_author_id,
-                                        author_id,
-                                        parent_permlink,
-                                        created_at,
-                                        updated_at,
-                                        is_del))
-                            else:
-                                # This is a child comment
-                                self.processed_data['data'].append((
-                                    parent_comment[0],
-                                    permlink,
-                                    title,
-                                    body,
-                                    json_metadata,
-                                    parent_comment[6],
-                                    parent_author_id,
-                                    author_id,
-                                    parent_permlink,
-                                    created_at,
-                                    updated_at,
-                                    is_del))
+                            self.processed_data['data'].append((
+                                None, # parent_id
+                                permlink,
+                                title,
+                                body,
+                                json_metadata,
+                                parent_permlink,
+                                created_at,
+                                updated_at,
+                                is_del,
+                                parent_author_text,
+                                author_text))
                         else:
                             # this comment is edited and does not use diff_match_patch
                             self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type), block_time))
                             continue
-
+                elif op_type == 'delete_comment':
+                    self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type), block_time))
+                    print('do_later_del', block_num, trans_id, op_idx)
             except Exception as e:
                 utils.PrintException([block_num, trans_id, op_idx, e])
                 return False
@@ -110,73 +75,30 @@ class CommentsProcess(BlockProcess):
         # print('processed:', self.processed_data)
         return self.processed_data
 
-    async def checkExist(self, author_id, permlink):
-        db1 = self.db1
-        db2 = self.db2
+    async def checkExist(self, author_text, permlink):
+        db = self.db
         for val in self.processed_data['data']:
-            if val[7] == author_id and val[1] == permlink:
+            if val[10] == author_text and val[1] == permlink:
                 return True
         for val in self.prepared_data['data']:
-            if val[7] == author_id and val[1] == permlink:
+            if val[10] == author_text and val[1] == permlink:
                 return True
-        #print('testTEST', author_id, permlink)
+        #print('testTEST', author_text, permlink)
         sql = '''select id from comments 
-            where author_id = %s
+            where author_text = %s
                 and permlink = %s'''
-        cur2 = await db2.cursor()
-        await cur2.execute(sql, (author_id, permlink))
-        data = await cur2.fetchone()
-        await cur2.close()
+        cur = await db.cursor()
+        await cur.execute(sql, (author_text, permlink))
+        data = await cur.fetchone()
+        await cur.close()
         if data != None:
             return True
         return False
 
-    async def getId(self, table, val):
-        db1 = self.db1
-        db2 = self.db2
-        if table == 'users':
-            sql = '''select id from users
-                where username = %s'''
-        elif table == 'comments':
-            sql = '''select id from comments 
-                where author_id = %s and permlink = %s'''
-        elif table == 'posts':
-            sql = '''select id from posts
-                where author_id = %s and permlink = %s'''
-        else:
-            return None
-        
-        try:
-            cur2 = await db2.cursor()
-            await cur2.execute(sql, val)
-            data = await cur2.fetchone()
-            if data == None:
-                return None
-            else:
-                return data[0]
-        except:
-            return None
-
-    async def getData(self, table, val):
-        db2 = self.db2
-        if table == 'comments':
-            sql = '''select * from comments
-                where author_id = %s and permlink = %s'''
-        else:
-            return None
-
-        try:
-            cur2 = await db2.cursor()
-            await cur2.execute(sql, val)
-            return await cur2.fetchone()
-        except:
-            return None
-
     async def insertData(self):
-        db1 = self.db1
-        db2 = self.db2
+        db = self.db
         try:
-            cur2 = await db2.cursor()
+            cur = await db.cursor()
             if self.prepared_data['data'] != []:
                 sql_main_data = '''
                     insert ignore into comments
@@ -186,31 +108,31 @@ class CommentsProcess(BlockProcess):
                             title,
                             body,
                             json_metadata,
-                            post_id,
-                            parent_author_id,
-                            author_id,
                             parent_permlink,
                             created_at,
                             updated_at,
-                            is_del)
+                            is_del,
+                            parent_author_text,
+                            author_text)
                     values
-                        (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'''
-                await cur2.executemany(sql_main_data, self.prepared_data['data'])
+                        (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'''
+                await cur.executemany(sql_main_data, self.prepared_data['data'])
             if self.prepared_data['undo'] != []:
                 sql_undo_data = '''
                     insert ignore into undo_op
                         (block_num, transaction_id, op_index, op, task_type, block_time)
                     values
                         (%s, %s, %s, %s, %s, %s)'''
-                await cur2.executemany(sql_undo_data, self.prepared_data['undo'])
+                await cur.executemany(sql_undo_data, self.prepared_data['undo'])
             sql_update_task = '''
                 update multi_tasks set is_finished = 1
                 where id = %s'''
-            await cur2.execute(sql_update_task, (self.task_id))
-            await db2.commit()
-            await cur2.close()
+            await cur.execute(sql_update_task, (self.task_id))
+            await db.commit()
+            await cur.close()
         except Exception as e:
-            await db2.rollback()
+            await db.rollback()
+            await cur.close()
             print('insert_data_failed', 'task_id:', self.task_id, self.prepared_data, e)
 
 def processor(all_tasks):

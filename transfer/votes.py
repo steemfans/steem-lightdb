@@ -17,8 +17,7 @@ class VotesProcess(BlockProcess):
         super().__init__(loop, data_type)
     async def process(self, block_num, block_time, trans_id, ops):
         global task_type
-        db1 = self.db1
-        db2 = self.db2
+        db = self.db
         # print('process %i blcok\'s ops' % block_num)
         self.processed_data = {
             'data': [],
@@ -36,44 +35,26 @@ class VotesProcess(BlockProcess):
                     if voter_id == None:
                         self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type), block_time))
                         continue
-                    post_id = await self.getId('posts', (op_detail['author'], op_detail['permlink']))
+                    comment_id = await self.getId('comments', (op_detail['author'], op_detail['permlink']))
                     #print(trans_id, op_idx, 'post_id:', post_id)
-                    if post_id == None:
-                        comment_id = await self.getId('comments', (op_detail['author'], op_detail['permlink']))
-                        #print(trans_id, op_idx, 'comment_id:', comment_id)
-                        if comment_id == None:
-                            self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type), block_time))
-                            continue
-                        else:
-                            # vote to comment
-                            vote_id = await self.getId('comments_votes', (voter_id, comment_id))
-                            #print(trans_id, op_idx, 'vote_id:', vote_id)
-                            if vote_id != None:
-                                # edit vote
-                                self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type), block_time))
-                                continue
-                            else:
-                                # insert comment vote
-                                if weight >= 0:
-                                    updown = True
-                                else:
-                                    weight = (-1) * weight
-                                    updown = False 
-                                self.processed_data['data'].append(('comment', (comment_id, voter_id, weight, updown, created_at, updated_at)))
+                    if comment_id == None:
+                        self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type), block_time))
+                        continue
                     else:
-                        vote_id = await self.getId('posts_votes', (voter_id, post_id))
+                        vote_id = await self.getId('comments_votes', (voter_id, comment_id))
+                        #print(trans_id, op_idx, 'vote_id:', vote_id)
                         if vote_id != None:
                             # edit vote
                             self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type), block_time))
                             continue
                         else:
-                            # insert post vote
+                            # insert comment vote
                             if weight >= 0:
                                 updown = True
                             else:
                                 weight = (-1) * weight
                                 updown = False 
-                            self.processed_data['data'].append(('post', (post_id, voter_id, weight, updown, created_at, updated_at)))
+                            self.processed_data['data'].append(('comment', (comment_id, voter_id, weight, updown, created_at, updated_at)))
             except Exception as e:
                 utils.PrintException(e)
                 return False
@@ -81,24 +62,14 @@ class VotesProcess(BlockProcess):
         return self.processed_data
 
     async def getId(self, table, val):
-        db1 = self.db1
-        db2 = self.db2
-        if table == 'posts':
-            sql = '''select posts.id from posts
-                left join users on posts.author_id = users.id
-                where users.username = %s
-                    and posts.permlink = %s'''
-        elif table == 'comments':
-            sql = '''select comments.id from comments 
-                left join users on comments.author_id = users.id
-                where users.username = %s
-                    and comments.permlink = %s'''
+        db = self.db
+        if table == 'comments':
+            sql = '''select id from comments 
+                where author_text = %s
+                and permlink = %s'''
         elif table == 'comments_votes':
             sql = '''select id from comments_votes 
                 where user_id = %s and comment_id = %s'''
-        elif table == 'posts_votes':
-            sql = '''select id from posts_votes 
-                where user_id = %s and post_id = %s'''
         elif table == 'users':
             sql = '''select id from users
                 where username = %s'''
@@ -106,9 +77,9 @@ class VotesProcess(BlockProcess):
             return None
         
         try:
-            cur2 = await db2.cursor()
-            await cur2.execute(sql, val)
-            data = await cur2.fetchone()
+            cur = await db.cursor()
+            await cur.execute(sql, val)
+            data = await cur.fetchone()
             if data == None:
                 return None
             else:
@@ -117,31 +88,14 @@ class VotesProcess(BlockProcess):
             return None
 
     async def insertData(self):
-        db1 = self.db1
-        db2 = self.db2
+        db = self.db
         try:
-            cur2 = await db2.cursor()
+            cur = await db.cursor()
             if self.prepared_data['data'] != []:
-                posts_votes = []
                 comments_votes = []
                 for val in self.prepared_data['data']:
-                    if val[0] == 'post':
-                        posts_votes.append(val[1])
                     if val[0] == 'comment':
                         comments_votes.append(val[1])
-                sql_post_data = '''
-                    insert ignore into posts_votes
-                        (
-                            post_id,
-                            user_id,
-                            weight,
-                            updown,
-                            created_at,
-                            updated_at
-                        )
-                    values
-                        (%s, %s, %s, %s, %s, %s)'''
-                await cur2.executemany(sql_post_data, posts_votes)
                 sql_comment_data = '''
                     insert ignore into comments_votes
                         (
@@ -154,22 +108,23 @@ class VotesProcess(BlockProcess):
                         )
                     values
                         (%s, %s, %s, %s, %s, %s)'''
-                await cur2.executemany(sql_comment_data, comments_votes)
+                await cur.executemany(sql_comment_data, comments_votes)
             if self.prepared_data['undo'] != []:
                 sql_undo_data = '''
                     insert ignore into undo_op
                         (block_num, transaction_id, op_index, op, task_type, block_time)
                     values
                         (%s, %s, %s, %s, %s, %s)'''
-                await cur2.executemany(sql_undo_data, self.prepared_data['undo'])
+                await cur.executemany(sql_undo_data, self.prepared_data['undo'])
             sql_update_task = '''
                 update multi_tasks set is_finished = 1
                 where id = %s'''
-            await cur2.execute(sql_update_task, (self.task_id))
-            await db2.commit()
-            await cur2.close()
+            await cur.execute(sql_update_task, (self.task_id))
+            await db.commit()
+            await cur.close()
         except Exception as e:
-            await db2.rollback()
+            await db.rollback()
+            await cur.close()
             print('insert_data_failed', 'task_id:', self.task_id, self.prepared_data, e)
 
 def processor(all_tasks):
