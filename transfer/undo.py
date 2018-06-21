@@ -111,12 +111,14 @@ def parseCommentTag(val):
 
             if 'tags' in json_metadata:
                 if isinstance(json_metadata['tags'], list):
+                    tmp_insert_data = []
                     for tag in json_metadata['tags']:
                         tag_id = getId('tags', tag)
                         if tag_id != None:
-                            return insertData('comments_tags', undo_id, (comment[0], tag_id))
+                            tmp_insert_data.append((comment[0], tag_id))
                         else:
                             return updateCount(undo_id)
+                    return insertData('comments_tags', undo_id, tmp_insert_data)
                 else:
                     return delData('undo_op', None, undo_id)
             else:
