@@ -15,7 +15,6 @@ ENV WORKER=5 \
            BASE_STEP=10 \
            BASE_SLICE_STEP=50 \
            BASE_THREAD_COUNT=20 \
-           STEEMDB_CONFIG='{"host": "steem-lightdb.com", "port": 3306, "user": "steem", "pass": "steem", "db": "steemdb"}' \
            STEEM_CONFIG='{"host": "172.20.0.4", "port": 3306, "user": "root", "pass": "123456", "db": "steem"}'
 COPY . /app
 CMD ["/bin/ash"]

@@ -60,7 +60,11 @@ def get():
         return []
 
     start_num = curr_cache_head + 1
-    end_num = head_block_number
+
+    if head_block_number > curr_cache_head + 10000:
+        end_num = curr_cache_head + 10000
+    else:
+        end_num = head_block_number
 
     i = start_num
     while i <= end_num:

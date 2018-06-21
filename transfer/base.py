@@ -67,6 +67,7 @@ def processor(task_queue):
                     updateCheckPoint(tasks['next_check_point'])
             task_end_time = time.time()
             print('get_blocks_end', tasks, task_end_time - task_start_time)
+            return
         else:
             task_end_time = time.time()
             print('get_blocks_end_failed', tasks, task_end_time - task_start_time)
