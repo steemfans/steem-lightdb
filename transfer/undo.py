@@ -464,7 +464,7 @@ def updateData(table, old_id, undo_id, val):
     try:
         cur = db.cursor()
         #update data
-        print('sql', sql, val)
+        #print('sql', sql, val)
         cur.execute(sql, val)
         #remove undo_op
         cur.execute(remove_undo_op_sql, undo_id)
