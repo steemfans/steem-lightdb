@@ -52,12 +52,6 @@ def get_config():
         c['base_thread_count'] = 20
 
     try:
-        c['steemdb_config'] = json.loads(env_dist.get('STEEMDB_CONFIG'))
-    except:
-        print('STEEMDB_CONFIG error')
-        sys.exit()
-
-    try:
         c['steem_config'] = json.loads(env_dist.get('STEEM_CONFIG'))
     except:
         print('STEEM_CONFIG error')
