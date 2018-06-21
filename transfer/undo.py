@@ -530,7 +530,6 @@ def processor(task_queue):
     while task_queue.qsize():
         undo_task = task_queue.get()
         task_queue.task_done()
-        print('get_undo_task_start', undo_task)
         task_start_time = time.time()
         undo_id = undo_task[0]
         block_num = undo_task[1]
@@ -538,6 +537,7 @@ def processor(task_queue):
         op_idx = undo_task[3]
         op = undo_task[4]
         task_type = undo_task[5]
+        print('get_undo_task_start', task_type)
         if task_type == 1:
             # user
             print('task_type:', undo_task)
@@ -560,9 +560,9 @@ def processor(task_queue):
             # user_relation
             parseUserRelation(undo_task)
         else:
-            print('unknown_task_type', undo_task)
+            print('unknown_task_type', task_type)
         task_end_time = time.time()
-        print('undo_task_finish', undo_task, task_end_time - task_start_time)
+        print('undo_task_finish', task_end_time - task_start_time)
 
 def getUndoTasks():
     config = utils.get_config()
