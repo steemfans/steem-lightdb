@@ -525,6 +525,7 @@ def delData(table, old_id, undo_id):
 def processor(task_queue):
     while task_queue.qsize():
         undo_task = task_queue.get()
+        task_queue.task_done()
         print('get_undo_task_start', undo_task)
         task_start_time = time.time()
         undo_id = undo_task[0]
@@ -556,6 +557,8 @@ def processor(task_queue):
             parseUserRelation(undo_task)
         else:
             print('unknown_task_type', undo_task)
+        task_end_time = time.time()
+        print('undo_task_finish', undo_task, task_end_time - task_start_time)
 
 def getUndoTasks():
     config = utils.get_config()

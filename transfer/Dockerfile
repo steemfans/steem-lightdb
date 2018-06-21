@@ -8,8 +8,8 @@ RUN apk --no-cache add python3 python3-dev gcc git musl-dev libffi-dev openssl-d
 ENV WORKER=5 \
            BLOCK_STEP=1000 \
            SLICE_STEP=50 \
-           UNDO_LIMIT=50 \
-           UNDO_COUNT=50 \
+           UNDO_LIMIT=1000 \
+           UNDO_COUNT=1000 \
            UNDO_SLEEP=60 \
            UNDO_THREAD_COUNT=20 \
            BASE_SLEEP=3 \
