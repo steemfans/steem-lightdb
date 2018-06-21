@@ -56,8 +56,8 @@ def main():
             except:
                 print('rollback')
                 db.rollback()
-            db.close()
 
+        db.close()
         print('sleep')
         time.sleep(60*5)
 
