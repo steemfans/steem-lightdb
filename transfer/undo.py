@@ -479,7 +479,6 @@ async def processor(loop, config):
         #get undo op
         sql = '''select * from undo_op
             where count <= %s
-            and is_finished = 0
             order by id asc
             limit %s'''
 

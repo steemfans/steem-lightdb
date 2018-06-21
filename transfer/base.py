@@ -97,7 +97,6 @@ def saveToMysql(insert_data):
             cursor.executemany(sql, insert_data)
             db.commit()
             db.close()
-            print('has_inserted_data')
             return True
         except Exception as e:
             db.rollback()
