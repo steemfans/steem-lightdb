@@ -35,6 +35,10 @@ def get_config():
     if c['undo_sleep'] == 0:
         c['undo_sleep'] = 5
 
+    c['undo_thread_count'] = int(env_dist.get('UNDO_THREAD_COUNT'))
+    if c['undo_thread_count'] == 0:
+        c['undo_thread_count'] = 20
+
     c['base_sleep'] = int(env_dist.get('BASE_SLEEP'))
     if c['base_sleep'] == 0:
         c['base_sleep'] = 3

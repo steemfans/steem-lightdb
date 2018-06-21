@@ -11,6 +11,7 @@ ENV WORKER=5 \
            UNDO_LIMIT=50 \
            UNDO_COUNT=50 \
            UNDO_SLEEP=60 \
+           UNDO_THREAD_COUNT=20 \
            BASE_SLEEP=3 \
            BASE_STEP=10 \
            BASE_SLICE_STEP=50 \

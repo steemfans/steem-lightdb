@@ -3,17 +3,15 @@
 import json, os, sys, time
 import utils.TransferTasks as tasks
 import utils.utils as utils
-import asyncio, aiomysql
-from multiprocessing import Pool
-from concurrent.futures import ThreadPoolExecutor,ProcessPoolExecutor
 from contextlib import suppress
 import diff_match_patch as dmp_module
 import traceback
-
-conn = None
+import queue
+import threading
+import pymysql
 
 # task_type = 3
-async def parseComment(val):
+def parseComment(val):
     undo_id = val[0]
     block_num = val[1]
     trans_id = val[2]
@@ -35,14 +33,14 @@ async def parseComment(val):
             try:
                 # if patch_fromText successed, this comment is edited.
                 patches = dmp.patch_fromText(op_detail['body']);
-                old_comment = await getData('comments', (author_text, op_detail['permlink']))
+                old_comment = getData('comments', (author_text, op_detail['permlink']))
                 if old_comment == None:
                     print('comment_not_exist_dmp', undo_id)
-                    return await updateCount(undo_id)
+                    return updateCount(undo_id)
                 print('old_comment_dmp:', undo_id)
                 new_body = dmp.patch_apply(patches, old_comment[4]);
                 print('dmp_edit_comment', block_num, trans_id, op_idx, old_comment[0])
-                return await updateData('comments', old_comment[0], undo_id, (
+                return updateData('comments', old_comment[0], undo_id, (
                     old_comment[1],
                     op_detail['permlink'],
                     op_detail['title'],
@@ -55,10 +53,10 @@ async def parseComment(val):
                     parent_author_text,
                     author_text))
             except ValueError as e:
-                old_comment = await getData('comments', (author_text, op_detail['permlink']))
+                old_comment = getData('comments', (author_text, op_detail['permlink']))
                 if old_comment == None:
                     print('comment_not_exist2', undo_id)
-                    return await insertData('comments', undo_id, (
+                    return insertData('comments', undo_id, (
                         op_detail['permlink'],
                         op_detail['title'],
                         op_detail['body'],
@@ -71,7 +69,7 @@ async def parseComment(val):
                         author_text))
                 else:
                     print('without_dmp_edit_comment', block_num, trans_id, op_idx, old_comment[0])
-                    return await updateData('comments', old_comment[0], undo_id, (
+                    return updateData('comments', old_comment[0], undo_id, (
                         op_detail['permlink'],
                         op_detail['title'],
                         op_detail['body'],
@@ -84,10 +82,10 @@ async def parseComment(val):
                         old_comment[13])) # author_text
     except Exception as e:
         utils.PrintException(undo_id)
-        return await updateCount(undo_id)
+        return updateCount(undo_id)
 
 # task_type = 5
-async def parseCommentTag(val):
+def parseCommentTag(val):
     undo_id = val[0]
     block_num = val[1]
     trans_id = val[2]
@@ -105,31 +103,31 @@ async def parseCommentTag(val):
                 json_metadata = json.loads(op_detail['json_metadata'])
             except Exception as e:
                 print('parse json failed:', op_detail['json_metadata'])
-                return await delData('undo_op', None, undo_id)
+                return delData('undo_op', None, undo_id)
 
-            comment = await getData('comments', (op_detail['author'], op_detail['permlink']))
+            comment = getData('comments', (op_detail['author'], op_detail['permlink']))
             if comment == None:
                 print('not_found_comment_in_comment_tag')
-                return await updateCount(undo_id)
+                return updateCount(undo_id)
 
             if 'tags' in json_metadata:
                 if isinstance(json_metadata['tags'], list):
                     for tag in json_metadata['tags']:
-                        tag_id = await getId('tags', tag)
+                        tag_id = getId('tags', tag)
                         if tag_id != None:
-                            return await insertData('comments_tags', undo_id, (comment[0], tag_id))
+                            return insertData('comments_tags', undo_id, (comment[0], tag_id))
                         else:
-                            return await updateCount(undo_id)
+                            return updateCount(undo_id)
                 else:
-                    return await delData('undo_op', None, undo_id)
+                    return delData('undo_op', None, undo_id)
             else:
-                return await delData('undo_op', None, undo_id)
+                return delData('undo_op', None, undo_id)
     except Exception as e:
         utils.PrintException(undo_id)
-        return await updateCount(undo_id)
+        return updateCount(undo_id)
 
 # task_type = 6
-async def parseVote(val):
+def parseVote(val):
     undo_id = val[0]
     block_num = val[1]
     trans_id = val[2]
@@ -149,20 +147,20 @@ async def parseVote(val):
             else:
                 weight = (-1) * weight
                 updown = False 
-            voter_id = await getId('users', op_detail['voter'])
+            voter_id = getId('users', op_detail['voter'])
             if voter_id == None:
-                return await updateCount(undo_id)
-            comment = await getData('comments', (op_detail['author'], op_detail['permlink']))
+                return updateCount(undo_id)
+            comment = getData('comments', (op_detail['author'], op_detail['permlink']))
             if comment == None:
                 print('not_found_comment', block_num, trans_id, op_idx)
-                return await updateCount(undo_id)
+                return updateCount(undo_id)
 
             else:
                 # vote to comment
-                vote = await getData('comments_votes', (voter_id, comment[0]))
+                vote = getData('comments_votes', (voter_id, comment[0]))
                 if vote != None:
                     # edit vote
-                    return await updateData('comments_votes', vote[0], undo_id, (
+                    return updateData('comments_votes', vote[0], undo_id, (
                         comment[0],
                         voter_id,
                         weight,
@@ -171,7 +169,7 @@ async def parseVote(val):
                         block_time))
                 else:
                     # insert comment vote
-                    return await insertData('comments_votes', undo_id, (
+                    return insertData('comments_votes', undo_id, (
                         comment[0],
                         voter_id,
                         weight,
@@ -181,10 +179,10 @@ async def parseVote(val):
 
     except Exception as e:
         utils.PrintException(undo_id)
-        return await updateCount(undo_id)
+        return updateCount(undo_id)
 
 # task_type = 7
-async def parseUserRelation(val):
+def parseUserRelation(val):
     undo_id = val[0]
     block_num = val[1]
     trans_id = val[2]
@@ -201,7 +199,7 @@ async def parseUserRelation(val):
                 json_data = json.loads(op_detail['json'])
             except Exception as e:
                 print('parse json failed:', op_detail['json'])
-                return await delData('undo_op', None, undo_id)
+                return delData('undo_op', None, undo_id)
 
             try:
                 follower = None
@@ -211,55 +209,75 @@ async def parseUserRelation(val):
                     if 'follower' in json_data:
                         follower = json_data['follower']
                     else:
-                        return await delData('undo_op', None, undo_id)
+                        return delData('undo_op', None, undo_id)
                     if 'following' in json_data:
                         following = json_data['following']
                     else:
-                        return await delData('undo_op', None, undo_id)
+                        return delData('undo_op', None, undo_id)
                     if 'what' in json_data and isinstance(json_data['what'], list):
                         if len(json_data['what']) == 0:
                             what = ''
                         else:
                             what = json_data['what'][0]
                     else:
-                        return await delData('undo_op', None, undo_id)
+                        return delData('undo_op', None, undo_id)
                 else:
-                    return await delData('undo_op', None, undo_id)
+                    return delData('undo_op', None, undo_id)
                 if follower == None and following == None and what == None:
-                    return await delData('undo_op', None, undo_id)
-                follower_id = await getId('users', follower)
+                    return delData('undo_op', None, undo_id)
+                follower_id = getId('users', follower)
                 if follower_id == None:
-                    return await updateCount(undo_id)
-                following_id = await getId('users', following)
+                    return updateCount(undo_id)
+                following_id = getId('users', following)
                 if following_id == None:
-                    return await updateCount(undo_id)
-                return await insertData('user_relations', undo_id, (follower_id, following_id, what, block_time))
+                    return updateCount(undo_id)
+                return insertData('user_relations', undo_id, (follower_id, following_id, what, block_time))
             except Exception as e:
                 utils.PrintException([block_num, trans_id, op_idx])
-                return await updateCount(undo_id)
+                return updateCount(undo_id)
     except Exception as e:
         utils.PrintException(undo_id)
-        return await updateCount(undo_id)
+        return updateCount(undo_id)
 # --------------------------------------------------
 
-async def updateCount(undo_id):
-    global conn
+def updateCount(undo_id):
+    config = utils.get_config()
+    db_c = config['steem_config']
+    db = pymysql.connect(
+        host=db_c['host'],
+        port=db_c['port'],
+        user=db_c['user'],
+        password=db_c['pass'],
+        charset='utf8mb4',
+        db=db_c['db'],
+        autocommit=False)
     print('get_in_update_count: ', undo_id)
     sql = 'update undo_op set count = count + 1 where id = %s'
     try:
-        cur = await conn.cursor()
-        await cur.execute(sql, undo_id)
-        await conn.commit()
-        await cur.close()
+        cur = db.cursor()
+        cur.execute(sql, undo_id)
+        db.commit()
+        cur.close()
+        db.close()
         print('update_count_success: ', undo_id)
     except Exception as e:
         print('update_count_failed: ', undo_id)
-        await cur.close()
-        await conn.rollback()
+        cur.close()
+        db.rollback()
+        db.close()
         utils.PrintException(undo_id)
 
-async def getId(table, val):
-    global conn
+def getId(table, val):
+    config = utils.get_config()
+    db_c = config['steem_config']
+    db = pymysql.connect(
+        host=db_c['host'],
+        port=db_c['port'],
+        user=db_c['user'],
+        password=db_c['pass'],
+        charset='utf8mb4',
+        db=db_c['db'],
+        autocommit=False)
     if table == 'users':
         sql = '''select id from users
             where username = %s'''
@@ -270,20 +288,31 @@ async def getId(table, val):
         return None
     
     try:
-        cur = await conn.cursor()
-        await cur.execute(sql, val)
-        data = await cur.fetchone()
-        await cur.close()
+        cur = db.cursor()
+        cur.execute(sql, val)
+        data = cur.fetchone()
+        cur.close()
+        db.close()
         if data != None:
             return data[0]
         else:
             return None
     except:
+        db.close()
         utils.PrintException()
         return None
 
-async def getData(table, val):
-    global conn
+def getData(table, val):
+    config = utils.get_config()
+    db_c = config['steem_config']
+    db = pymysql.connect(
+        host=db_c['host'],
+        port=db_c['port'],
+        user=db_c['user'],
+        password=db_c['pass'],
+        charset='utf8mb4',
+        db=db_c['db'],
+        autocommit=False)
     if table == 'comments':
         sql = '''select * from comments
             where author_text = %s and permlink = %s limit 1'''
@@ -294,17 +323,28 @@ async def getData(table, val):
         return None
     
     try:
-        cur = await conn.cursor()
-        await cur.execute(sql, val)
-        data = await cur.fetchone()
-        await cur.close()
+        cur = db.cursor()
+        cur.execute(sql, val)
+        data = cur.fetchone()
+        cur.close()
+        db.close()
         return data
     except:
+        db.close()
         utils.PrintException()
         return None
 
-async def insertData(table, undo_id, val):
-    global conn
+def insertData(table, undo_id, val):
+    config = utils.get_config()
+    db_c = config['steem_config']
+    db = pymysql.connect(
+        host=db_c['host'],
+        port=db_c['port'],
+        user=db_c['user'],
+        password=db_c['pass'],
+        charset='utf8mb4',
+        db=db_c['db'],
+        autocommit=False)
     if table == 'comments':
         sql = '''insert into comments 
             (
@@ -362,26 +402,37 @@ async def insertData(table, undo_id, val):
         where id = %s'''
     
     try:
-        cur = await conn.cursor()
+        cur = db.cursor()
         if table == 'comments_tags':
             # remove previous comment_tag records
-            await cur.execute(sql2, tuple_comment_ids)
+            cur.execute(sql2, tuple_comment_ids)
         #update data
-        await cur.execute(sql, val)
+        cur.execute(sql, val)
         if undo_id != None:
             #remove undo_op
-            await cur.execute(remove_undo_op_sql, undo_id)
-        await conn.commit()
-        await cur.close()
+            cur.execute(remove_undo_op_sql, undo_id)
+        db.commit()
+        cur.close()
+        db.close()
         return True
     except:
-        await cur.close()
-        await conn.rollback()
+        cur.close()
+        db.rollback()
+        db.close()
         utils.PrintException(undo_id)
         return False
 
-async def updateData(table, old_id, undo_id, val):
-    global conn
+def updateData(table, old_id, undo_id, val):
+    config = utils.get_config()
+    db_c = config['steem_config']
+    db = pymysql.connect(
+        host=db_c['host'],
+        port=db_c['port'],
+        user=db_c['user'],
+        password=db_c['pass'],
+        charset='utf8mb4',
+        db=db_c['db'],
+        autocommit=False)
     if table == 'comments':
         sql = '''update comments
             set permlink = %s,
@@ -411,22 +462,33 @@ async def updateData(table, old_id, undo_id, val):
         where id = %s'''
     
     try:
-        cur = await conn.cursor()
+        cur = db.cursor()
         #update data
-        await cur.execute(sql, val)
+        cur.execute(sql, val)
         #remove undo_op
-        await cur.execute(remove_undo_op_sql, undo_id)
-        await conn.commit()
-        await cur.close()
+        cur.execute(remove_undo_op_sql, undo_id)
+        db.commit()
+        cur.close()
+        db.close()
         return True
     except:
-        await cur.close()
-        await conn.rollback()
+        cur.close()
+        db.rollback()
+        db.close()
         utils.PrintException(undo_id)
         return False
 
-async def delData(table, old_id, undo_id):
-    global conn
+def delData(table, old_id, undo_id):
+    config = utils.get_config()
+    db_c = config['steem_config']
+    db = pymysql.connect(
+        host=db_c['host'],
+        port=db_c['port'],
+        user=db_c['user'],
+        password=db_c['pass'],
+        charset='utf8mb4',
+        db=db_c['db'],
+        autocommit=False)
     if table == 'posts':
         sql = '''update posts
             set is_del = 1
@@ -444,96 +506,104 @@ async def delData(table, old_id, undo_id):
         where id = %s'''
     
     try:
-        cur = await conn.cursor()
+        cur = db.cursor()
         #remove data
         if sql != None:
-            await cur.execute(sql, old_id)
+            cur.execute(sql, old_id)
         #remove undo_op
-        await cur.execute(remove_undo_op_sql, undo_id)
-        await conn.commit()
-        await cur.close()
+        cur.execute(remove_undo_op_sql, undo_id)
+        db.commit()
+        cur.close()
+        db.close()
         return True
     except:
-        await cur.close()
-        await conn.rollback()
+        cur.close()
+        db.rollback()
+        db.close()
         utils.PrintException(undo_id)
 # --------------------------------------------------
 
-async def processor(loop, config):
-    global conn
+def processor(task_queue):
+    while task_queue.qsize():
+        undo_task = task_queue.get()
+        print('get_undo_task_start', undo_task)
+        task_start_time = time.time()
+        undo_id = undo_task[0]
+        block_num = undo_task[1]
+        trans_id = undo_task[2]
+        op_idx = undo_task[3]
+        op = undo_task[4]
+        task_type = undo_task[5]
+        if task_type == 1:
+            # user
+            print('task_type:', undo_task)
+        elif task_type == 2:
+            # has been removed
+            print('task_type:', undo_task)
+        elif task_type == 3:
+            # comment
+            parseComment(undo_task)
+        elif task_type == 4:
+            # tag
+            print('task_type:', undo_task)
+        elif task_type == 5:
+            # comment_tag
+            parseCommentTag(undo_task)
+        elif task_type == 6:
+            # vote
+            parseVote(undo_task)
+        elif task_type == 7:
+            # user_relation
+            parseUserRelation(undo_task)
+        else:
+            print('unknown_task_type', undo_task)
+
+def getUndoTasks():
+    config = utils.get_config()
     db_c = config['steem_config']
-    while True:
-        conn = await aiomysql.connect(
-            host=db_c['host'],
-            port=db_c['port'],
-            user=db_c['user'],
-            password=db_c['pass'],
-            charset='utf8mb4',
-            db=db_c['db'],
-            autocommit=False,
-            loop=loop)
-
-        undo_count = config['undo_count']
-        undo_limit = config['undo_limit']
-        undo_sleep = config['undo_sleep']
-        #get undo op
-        sql = '''select * from undo_op
-            where count <= %s
-            order by id asc
-            limit %s'''
-
-        cur = await conn.cursor()
-        await cur.execute(sql, (undo_count, undo_limit))
-        data = await cur.fetchall()
-        await cur.close()
-
-        if data != ():
-            for val in data:
-                undo_id = val[0]
-                block_num = val[1]
-                trans_id = val[2]
-                op_idx = val[3]
-                op = val[4]
-                task_type = val[5]
-                if task_type == 1:
-                    # user
-                    print('task_type:', val)
-                elif task_type == 2:
-                    # has been removed
-                    print('task_type:', val)
-                elif task_type == 3:
-                    # comment
-                    await parseComment(val)
-                elif task_type == 4:
-                    # tag
-                    print('task_type:', val)
-                elif task_type == 5:
-                    # comment_tag
-                    await parseCommentTag(val)
-                elif task_type == 6:
-                    # vote
-                    await parseVote(val)
-                elif task_type == 7:
-                    # user_relation
-                    await parseUserRelation(val)
-                else:
-                    print('unknown_task_type', val)
-
-        conn.close()
-        conn = None
-        time.sleep(undo_sleep)
+    db = pymysql.connect(
+        host=db_c['host'],
+        port=db_c['port'],
+        user=db_c['user'],
+        password=db_c['pass'],
+        charset='utf8mb4',
+        db=db_c['db'],
+        autocommit=False)
+    undo_count = config['undo_count']
+    undo_limit = config['undo_limit']
+    #get undo op
+    sql = '''select * from undo_op
+        where count <= %s
+        order by id asc
+        limit %s'''
+    with db.cursor() as cur:
+        cur.execute(sql, (undo_count, undo_limit))
+        data = cur.fetchall()
+    db.close()
+    return data
 
 def mainMultiProcess():
     config = utils.get_config()
-    loop = asyncio.get_event_loop()
-    try:
-        loop.run_until_complete(processor(loop, config))
-    except KeyboardInterrupt as e:
-        for task in asyncio.Task.all_tasks():
-            task.cancel()
-        loop.stop()
-    finally:
-        loop.close()
+    undo_sleep = config['undo_sleep']
+    undo_thread_count = config['undo_thread_count']
+    while True:
+        #get undo op
+        data = getUndoTasks()
+        task_queue = queue.Queue()
+        if data != ():
+            for tmp_tasks in data:
+                task_queue.put(tmp_tasks)
+            # make multi threads
+            thread_list = []
+            for n in range(undo_thread_count):
+                t_t = threading.Thread(target=processor, args=(task_queue, ))
+                thread_list.append(t_t)
+            for t in thread_list:
+                t.setDaemon(True)
+                t.start()
+            task_queue.join() # suspend before all tasks finished
+        print('get_in_sleep')
+        time.sleep(undo_sleep)
 
 if __name__ == '__main__':
     with suppress(KeyboardInterrupt):
