@@ -41,7 +41,6 @@ def parseComment(val):
                 new_body = dmp.patch_apply(patches, old_comment[4]);
                 print('dmp_edit_comment', block_num, trans_id, op_idx, old_comment[0])
                 return updateData('comments', old_comment[0], undo_id, (
-                    old_comment[1],
                     op_detail['permlink'],
                     op_detail['title'],
                     new_body,
