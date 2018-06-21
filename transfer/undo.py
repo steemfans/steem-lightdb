@@ -79,6 +79,24 @@ def parseComment(val):
                         False,
                         old_comment[12], # parent_author_text
                         old_comment[13])) # author_text
+        elif op_type == 'delete_comment':
+            old_comment = getData('comments', (op_detail['author'], op_detail['permlink']))
+            if old_comment == None:
+                print('not_found_comment_which_will_be_del', undo_id)
+                return updateCount(undo_id)
+            else:
+                return updateData('comments', old_comment[0], undo_id, (
+                    old_comment[2], # permlink
+                    old_comment[3], # title
+                    old_comment[4], # body
+                    old_comment[5], # json_metadata
+                    old_comment[8], # parent_permlink
+                    old_comment[9], # created_at
+                    block_time,
+                    True,
+                    old_comment[12], # parent_author_text
+                    old_comment[13])) # author_text
+
     except Exception as e:
         utils.PrintException(undo_id)
         return updateCount(undo_id)
@@ -117,6 +135,7 @@ def parseCommentTag(val):
                         if tag_id != None:
                             tmp_insert_data.append((comment[0], tag_id))
                         else:
+                            print('not_found_tag_id', undo_id)
                             return updateCount(undo_id)
                     return insertData('comments_tags', undo_id, tuple(tmp_insert_data))
                 else:
@@ -150,6 +169,7 @@ def parseVote(val):
                 updown = False 
             voter_id = getId('users', op_detail['voter'])
             if voter_id == None:
+                print('not_found_voter_id', undo_id)
                 return updateCount(undo_id)
             comment = getData('comments', (op_detail['author'], op_detail['permlink']))
             if comment == None:
@@ -228,9 +248,11 @@ def parseUserRelation(val):
                     return delData('undo_op', None, undo_id)
                 follower_id = getId('users', follower)
                 if follower_id == None:
+                    print('not_found_follower_id', undo_id)
                     return updateCount(undo_id)
                 following_id = getId('users', following)
                 if following_id == None:
+                    print('not_found_following_id', undo_id)
                     return updateCount(undo_id)
                 return insertData('user_relations', undo_id, ((follower_id, following_id, what, block_time), ))
             except Exception as e:
