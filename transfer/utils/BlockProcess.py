@@ -48,7 +48,7 @@ class BlockProcess(object):
             for block in blocks:
                 curr_block_num = block[0]
                 curr_block_info = json.loads(block[1])
-                curr_block_timestamp = utils.strtotime(block[2])
+                curr_block_timestamp = block[2]
                 if curr_block_info['transaction_ids'] != []:
                     for idx, trans in enumerate(curr_block_info['transactions']):
                         curr_block_trans_id = curr_block_info['transaction_ids'][idx]
