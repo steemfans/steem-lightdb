@@ -41,7 +41,7 @@ class BlockCache
      */
     private $timestamp;
 
-    public function getId()
+    public function getId(): ?int
     {
         return $this->id;
     }

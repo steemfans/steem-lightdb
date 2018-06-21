@@ -37,7 +37,7 @@ class MultiTasks
      */
     private $is_finished;
 
-    public function getId()
+    public function getId(): ?int
     {
         return $this->id;
     }

@@ -48,7 +48,7 @@ class CommentsVotes
      */
     private $updated_at;
 
-    public function getId()
+    public function getId(): ?int
     {
         return $this->id;
     }
@@ -106,7 +106,7 @@ class CommentsVotes
         return $this->created_at;
     }
 
-    public function setCreatedAt(?int $created_at): self
+    public function setCreatedAt(int $created_at): self
     {
         $this->created_at = $created_at;
 

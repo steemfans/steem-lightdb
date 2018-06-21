@@ -52,7 +52,7 @@ class UndoOp
      */
     private $block_time;
 
-    public function getId()
+    public function getId(): ?int
     {
         return $this->id;
     }

@@ -38,7 +38,7 @@ class UserRelations
      */
     private $created_at;
 
-    public function getId()
+    public function getId(): ?int
     {
         return $this->id;
     }
@@ -72,7 +72,7 @@ class UserRelations
         return $this->what;
     }
 
-    public function setWhat(string $what): self
+    public function setWhat(?string $what): self
     {
         $this->what = $what;
 

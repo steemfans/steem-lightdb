@@ -60,20 +60,17 @@ class Users
 
     public function __construct()
     {
-        $this->posts = new ArrayCollection();
         $this->comments = new ArrayCollection();
-        $this->postsVotes = new ArrayCollection();
         $this->userRelations = new ArrayCollection();
         $this->commentsVotes = new ArrayCollection();
-        $this->is_pow = false;
     }
 
-    public function getId()
+    public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getUsername(): string
+    public function getUsername(): ?string
     {
         return $this->username;
     }
@@ -85,45 +82,50 @@ class Users
         return $this;
     }
 
-    public function getJsonMetadata()
+    public function getJsonMetadata(): ?string
     {
         return $this->json_metadata;
     }
 
-    public function setJsonMetadata($json_metadata): self
+    public function setJsonMetadata(?string $json_metadata): self
     {
         $this->json_metadata = $json_metadata;
 
         return $this;
     }
 
-    /**
-     * @return Collection|Posts[]
-     */
-    public function getPosts(): Collection
+    public function getIsPow(): ?bool
     {
-        return $this->posts;
+        return $this->is_pow;
     }
 
-    public function addPost(Posts $post): self
+    public function setIsPow(bool $is_pow): self
     {
-        if (!$this->posts->contains($post)) {
-            $this->posts[] = $post;
-            $post->setAuthor($this);
-        }
+        $this->is_pow = $is_pow;
 
         return $this;
     }
 
-    public function removePost(Posts $post): self
+    public function getCreatedAt(): ?int
     {
-        if ($this->posts->contains($post)) {
-            $this->posts->removeElement($post);
-            // set the owning side to null (unless already changed)
-            if ($post->getAuthor() === $this) {
-                $post->setAuthor(null);
-            }
-        }
+        return $this->created_at;
+    }
+
+    public function setCreatedAt(?int $created_at): self
+    {
+        $this->created_at = $created_at;
+
+        return $this;
+    }
+
+    public function getUpdatedAt(): ?int
+    {
+        return $this->updated_at;
+    }
+
+    public function setUpdatedAt(?int $updated_at): self
+    {
+        $this->updated_at = $updated_at;
 
         return $this;
     }
@@ -153,37 +155,6 @@ class Users
             // set the owning side to null (unless already changed)
             if ($comment->getAuthor() === $this) {
                 $comment->setAuthor(null);
-            }
-        }
-
-        return $this;
-    }
-
-    /**
-     * @return Collection|PostsVotes[]
-     */
-    public function getPostsVotes(): Collection
-    {
-        return $this->postsVotes;
-    }
-
-    public function addPostsVote(PostsVotes $postsVote): self
-    {
-        if (!$this->postsVotes->contains($postsVote)) {
-            $this->postsVotes[] = $postsVote;
-            $postsVote->setUser($this);
-        }
-
-        return $this;
-    }
-
-    public function removePostsVote(PostsVotes $postsVote): self
-    {
-        if ($this->postsVotes->contains($postsVote)) {
-            $this->postsVotes->removeElement($postsVote);
-            // set the owning side to null (unless already changed)
-            if ($postsVote->getUser() === $this) {
-                $postsVote->setUser(null);
             }
         }
 
@@ -252,39 +223,4 @@ class Users
         return $this;
     }
 
-    public function getIsPow(): ?bool
-    {
-        return $this->is_pow;
-    }
-
-    public function setIsPow(bool $is_pow): self
-    {
-        $this->is_pow = $is_pow;
-
-        return $this;
-    }
-
-    public function getCreatedAt(): ?int
-    {
-        return $this->created_at;
-    }
-
-    public function setCreatedAt(?int $created_at): self
-    {
-        $this->created_at = $created_at;
-
-        return $this;
-    }
-
-    public function getUpdatedAt(): ?int
-    {
-        return $this->updated_at;
-    }
-
-    public function setUpdatedAt(?int $updated_at): self
-    {
-        $this->updated_at = $updated_at;
-
-        return $this;
-    }
 }
