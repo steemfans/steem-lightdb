@@ -55,7 +55,7 @@ def parseComment(val):
                 old_comment = getData('comments', (author_text, op_detail['permlink']))
                 if old_comment == None:
                     print('comment_not_exist2', undo_id)
-                    return insertData('comments', undo_id, (
+                    return insertData('comments', undo_id, ((
                         old_comment[2], # permlink
                         op_detail['title'],
                         op_detail['body'],
@@ -65,7 +65,7 @@ def parseComment(val):
                         block_time, # updated_at
                         False,
                         parent_author_text,
-                        author_text))
+                        author_text), ))
                 else:
                     print('without_dmp_edit_comment', block_num, trans_id, op_idx, old_comment[0])
                     return updateData('comments', old_comment[0], undo_id, (
@@ -118,7 +118,7 @@ def parseCommentTag(val):
                             tmp_insert_data.append((comment[0], tag_id))
                         else:
                             return updateCount(undo_id)
-                    return insertData('comments_tags', undo_id, tmp_insert_data)
+                    return insertData('comments_tags', undo_id, tuple(tmp_insert_data))
                 else:
                     return delData('undo_op', None, undo_id)
             else:
@@ -170,13 +170,13 @@ def parseVote(val):
                         block_time))
                 else:
                     # insert comment vote
-                    return insertData('comments_votes', undo_id, (
+                    return insertData('comments_votes', undo_id, ((
                         comment[0],
                         voter_id,
                         weight,
                         updown,
                         block_time,
-                        block_time))
+                        block_time), ))
 
     except Exception as e:
         utils.PrintException(undo_id)
@@ -232,7 +232,7 @@ def parseUserRelation(val):
                 following_id = getId('users', following)
                 if following_id == None:
                     return updateCount(undo_id)
-                return insertData('user_relations', undo_id, (follower_id, following_id, what, block_time))
+                return insertData('user_relations', undo_id, ((follower_id, following_id, what, block_time), ))
             except Exception as e:
                 utils.PrintException([block_num, trans_id, op_idx])
                 return updateCount(undo_id)
@@ -385,7 +385,7 @@ def insertData(table, undo_id, val):
         tuple_comment_ids = tuple(comment_ids)
         format_strings = ','.join(['%s'] * len(comment_ids))
         sql2 = '''delete from comments_tags
-            where id in (%s)''' % format_strings
+            where comments_id in (%s)''' % format_strings
     elif table == 'user_relations':
         sql = '''insert into user_relations
             (follower_id, following_id, what, created_at)
@@ -408,7 +408,7 @@ def insertData(table, undo_id, val):
             # remove previous comment_tag records
             cur.execute(sql2, tuple_comment_ids)
         #update data
-        cur.execute(sql, val)
+        cur.executemany(sql, val)
         if undo_id != None:
             #remove undo_op
             cur.execute(remove_undo_op_sql, undo_id)
