@@ -509,7 +509,7 @@ async def processor(loop, config):
                     print('task_type:', val)
                 elif task_type == 5:
                     # comment_tag
-                    await parsePostTag(val)
+                    await parseCommentTag(val)
                 elif task_type == 6:
                     # vote
                     await parseVote(val)
