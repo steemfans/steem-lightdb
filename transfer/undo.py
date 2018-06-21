@@ -43,10 +43,10 @@ def parseComment(val):
                 return updateData('comments', old_comment[0], undo_id, (
                     op_detail['permlink'],
                     op_detail['title'],
-                    new_body,
+                    new_body[0],
                     json.dumps(op_detail['json_metadata']),
-                    old_comment[9], # parent_permlink
-                    old_comment[10], # created_at
+                    old_comment[8], # parent_permlink
+                    old_comment[9], # created_at
                     block_time,
                     False,
                     parent_author_text,
@@ -56,7 +56,7 @@ def parseComment(val):
                 if old_comment == None:
                     print('comment_not_exist2', undo_id)
                     return insertData('comments', undo_id, (
-                        op_detail['permlink'],
+                        old_comment[2], # permlink
                         op_detail['title'],
                         op_detail['body'],
                         json.dumps(op_detail['json_metadata']),
@@ -69,12 +69,12 @@ def parseComment(val):
                 else:
                     print('without_dmp_edit_comment', block_num, trans_id, op_idx, old_comment[0])
                     return updateData('comments', old_comment[0], undo_id, (
-                        op_detail['permlink'],
+                        old_comment[2], # permlink
                         op_detail['title'],
                         op_detail['body'],
                         json.dumps(op_detail['json_metadata']),
-                        old_comment[9], # parent_permlink
-                        old_comment[10], # created_at
+                        old_comment[8], # parent_permlink
+                        old_comment[9], # created_at
                         block_time,
                         False,
                         old_comment[12], # parent_author_text
@@ -419,6 +419,7 @@ def insertData(table, undo_id, val):
         db.rollback()
         db.close()
         utils.PrintException(undo_id)
+        updateCount(undo_id)
         return False
 
 def updateData(table, old_id, undo_id, val):
@@ -463,6 +464,7 @@ def updateData(table, old_id, undo_id, val):
     try:
         cur = db.cursor()
         #update data
+        print('sql', sql, val)
         cur.execute(sql, val)
         #remove undo_op
         cur.execute(remove_undo_op_sql, undo_id)
@@ -474,6 +476,7 @@ def updateData(table, old_id, undo_id, val):
         cur.close()
         db.rollback()
         db.close()
+        updateCount(undo_id)
         utils.PrintException(undo_id)
         return False
 
@@ -519,6 +522,7 @@ def delData(table, old_id, undo_id):
         cur.close()
         db.rollback()
         db.close()
+        updateCount(undo_id)
         utils.PrintException(undo_id)
 # --------------------------------------------------
 
