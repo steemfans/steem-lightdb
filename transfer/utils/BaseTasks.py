@@ -61,8 +61,8 @@ def get():
 
     start_num = curr_cache_head + 1
 
-    if head_block_number > curr_cache_head + 10000:
-        end_num = curr_cache_head + 10000
+    if head_block_number > start_num + 10000:
+        end_num = start_num + 10000
     else:
         end_num = head_block_number
 
@@ -121,6 +121,7 @@ def checkLostBlockCache(db, config):
     
     if (max_num - check_point + 1) <= records_count:
         print('no_lost_block_cache')
+        updateCheckPoint(db, max_num)
         return []
 
     print('detect_lost_block_cache')

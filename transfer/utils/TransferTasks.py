@@ -48,7 +48,7 @@ def get(t):
             print('cannot_get_check_point')
             return []
         else:
-            check_point = res['val']
+            check_point = int(res['val'])
             print('get_check_point_in_transfer_tasks', check_point)
         # get last task block num
         sql = '''select * from multi_tasks

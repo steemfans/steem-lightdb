@@ -59,6 +59,7 @@ def processor(task_queue):
         r = saveToMysql(insert_data)
         if r == True:
             task_queue.task_done()
+            print('task_done', tasks)
             if tasks['task_type'] == 'lost_block':
                 check_point_sum += 1
                 print(check_point_sum, tasks['total_slice'])
@@ -67,11 +68,9 @@ def processor(task_queue):
                     updateCheckPoint(tasks['next_check_point'])
             task_end_time = time.time()
             print('get_blocks_end', tasks, task_end_time - task_start_time)
-            return
         else:
             task_end_time = time.time()
             print('get_blocks_end_failed', tasks, task_end_time - task_start_time)
-            return
 
 def saveToMysql(insert_data):
     config = utils.get_config()
@@ -97,12 +96,14 @@ def saveToMysql(insert_data):
                 ) values (%s, %s, %s, %s, %s)'''
             cursor.executemany(sql, insert_data)
             db.commit()
+            db.close()
+            print('has_inserted_data')
             return True
         except Exception as e:
             db.rollback()
+            db.close()
             print('[warning]insert block cache error', e, sql, insert_data)
             return False
-    db.close()
 
 def updateCheckPoint(check_point):
     config = utils.get_config()
@@ -123,12 +124,13 @@ def updateCheckPoint(check_point):
                 where param = "check_point"'''
             cursor.execute(sql, (check_point, ))
             db.commit()
+            db.close()
             return True
         except Exception as e:
             db.rollback()
+            db.close()
             print('[warning]insert block cache error', e, sql, insert_data)
             return False
-    db.close()
 
 def quit(signum, frame):
     print('quit')
@@ -147,6 +149,7 @@ def mainMultiProcess():
 
         while True:
             all_tasks = BaseTasks.get()
+            print('all_tasks_count', len(all_tasks))
             # print('all_tasks', all_tasks)
             if all_tasks == []:
                 print('no_tasks')
