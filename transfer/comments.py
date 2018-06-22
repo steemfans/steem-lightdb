@@ -69,8 +69,8 @@ class CommentsProcess(BlockProcess):
                     self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type), block_time))
                     print('do_later_del', block_num, trans_id, op_idx)
             except Exception as e:
+                self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type), block_time))
                 utils.PrintException([block_num, trans_id, op_idx, e])
-                return False
 
         # print('processed:', self.processed_data)
         return self.processed_data

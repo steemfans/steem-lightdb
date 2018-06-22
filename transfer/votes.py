@@ -56,8 +56,8 @@ class VotesProcess(BlockProcess):
                                 updown = False 
                             self.processed_data['data'].append(('comment', (comment_id, voter_id, weight, updown, created_at, updated_at)))
             except Exception as e:
+                self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type), block_time))
                 utils.PrintException(e)
-                return False
         # print('processed:', self.processed_data)
         return self.processed_data
 

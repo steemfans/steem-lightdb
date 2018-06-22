@@ -75,8 +75,8 @@ class UserRelationProcess(BlockProcess):
                     else:
                         self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type), block_time))
                 except Exception as e:
+                    self.processed_data['undo'].append((block_num, trans_id, op_idx, json.dumps(op), tasks.getTypeId(task_type), block_time))
                     utils.PrintException([block_num, trans_id, op_idx])
-                    return False
             else:
                 # print('unknown type:', op_type, block_num, trans_id, ops, op_idx)
                 continue
