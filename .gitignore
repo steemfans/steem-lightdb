@@ -2,3 +2,4 @@ vendor/
 devTools/data
 devTools/data/*.txt
 !devTools/data/.gitkeep
+__pycache__

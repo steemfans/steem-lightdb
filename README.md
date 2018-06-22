@@ -30,73 +30,68 @@ This command will create a network named `lightdb` with ip range `172.19.0.0/24`
 
 `123456` is your Mysql server root's password
 
-### Import DB structure
+### Creating the Database Tables/Schema
+
+If you first run LightDB, please create database first.
 
 ```
-# git clone https://github.com/ety001/steem-lightdb.git
-# cd steem-lightdb
-# docker cp dbMerge/201805020838.sql mysql:/tmp/data.sql
-# docker exec -it mysql mysql -uroot -p
-Enter password:
-Welcome to the MariaDB monitor.  Commands end with ; or \g.
-Your MariaDB connection id is 9
-Server version: 10.2.14-MariaDB-10.2.14+maria~jessie mariadb.org binary distribution
-
-Copyright (c) 2000, 2018, Oracle, MariaDB Corporation Ab and others.
-
-Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
-
-MariaDB [(none)]> source /tmp/data.sql
-
-MariaDB [(none)]> exit
+# docker run -it --rm --network lightdb -e DATABASE_URL="mysql://root:123456@172.19.0.2:3306/steem" -e APP_ENV=prod ety001/lightdb-api php bin/console doctrine:database:create
 ```
 
-### Run the Base Data container
+Creating the Database Tables/Schema.
 
 ```
-# docker run -it -d --name steem-lightdb-base -e DB_HOST=172.19.0.2 -e DB_NAME=steemdb -e DB_USER=root -e DB_PASS=123456 --restart always --network lightdb --ip "172.19.0.3" ety001/steem-lightdb-base:latest
-```
+# docker run -it --rm --network lightdb -e DATABASE_URL="mysql://root:123456@172.19.0.2:3306/steem" -e APP_ENV=prod ety001/lightdb-api php bin/console doctrine:migrations:migrate
+                                                              
+                    Application Migrations                    
+                                                              
 
-If you want to get notifications by Discord, add `-e DISCORD=YOUR_DISCORD_WEBHOOK` in the command.
-
-### Run the Base Data Filled container
-
-Sometimes the base script will not get data from Blockchain
-because of the unstable network. So we need to run another script
-to keep the data same as the Blockchain.
-
-```
-# docker run -it -d --name steem-lightdb-base-fill-db -e DB_HOST=172.19.0.2 -e DB_NAME=steemdb -e DB_USER=root -e DB_PASS=123456 --restart always --network lightdb --ip "172.19.0.4" ety001/steem-lightdb-base:latest /app/fill.py
-```
-
-Add a task into crond
-
-```
-# crontab –e
-0 0 * * * /usr/bin/docker restart steem-lightdb-base-fill-db
-```
-
-### Import Steem Database
-
-```
-# docker pull ety001/lightdb-transfer
-
-# mkdir -p /data/transfer/var
-
-# docker run -it --rm --network lightdb -e CHAIN_DB="mysql://root:123456@172.19.0.2/steemdb" -e DATABASE_URL="mysql://root:123456@172.19.0.2/steem" -e APP_ENV=prod -v /data/transfer/var:/app/var ety001/lightdb-transfer php bin/console doctrine:database:create
-
-# docker run -it --rm --network lightdb -e CHAIN_DB="mysql://root:123456@172.19.0.2/steemdb" -e DATABASE_URL="mysql://root:123456@172.19.0.2/steem" -e APP_ENV=prod -v /data/transfer/var:/app/var ety001/lightdb-transfer php bin/console doctrine:migrations:migrate
+WARNING! You are about to execute a database migration that could result in schema changes and data loss. Are you sure you wish to continue? (y/n)y
 ```
 
 ### Run transfer
 
+Please run the transfer containers in order.
+
 ```
-docker run -itd --name lightdb-transfer --restart always --network main --ip "172.20.0.202" -e CHAIN_DB="mysql://steem:steem@172.20.0.2:3306/steemdb" -e DATABASE_URL="mysql://steemwrite:8R4nQKrytP27@172.20.0.2:3306/steem" -e APP_ENV=prod -v /data/transfer/var:/app/var ety001/lightdb-transfer php bin/console transfer:run --step=500
+# docker run -itd -e STEEM_CONFIG='{"host": "172.19.0.2", "port": 3306, "user": "root", "pass": "123456", "db": "steem"}' --network lightdb --restart always --name lightdb-base ety001/lightdb-transfer:latest /app/base.py
+
+# docker run -itd -e STEEM_CONFIG='{"host": "172.19.0.2", "port": 3306, "user": "root", "pass": "123456", "db": "steem"}' --network lightdb --restart always --name lightdb-users ety001/lightdb-transfer:latest /app/users.py
+
+# docker run -itd -e STEEM_CONFIG='{"host": "172.19.0.2", "port": 3306, "user": "root", "pass": "123456", "db": "steem"}' --network lightdb --restart always --name lightdb-user-relation ety001/lightdb-transfer:latest /app/user_relation.py
+
+# docker run -itd -e STEEM_CONFIG='{"host": "172.19.0.2", "port": 3306, "user": "root", "pass": "123456", "db": "steem"}' --network lightdb --restart always --name lightdb-tags ety001/lightdb-transfer:latest /app/tags.py
+
+# docker run -itd -e STEEM_CONFIG='{"host": "172.19.0.2", "port": 3306, "user": "root", "pass": "123456", "db": "steem"}' --network lightdb --restart always --name lightdb-comments ety001/lightdb-transfer:latest /app/comments.py
+
+# docker run -itd -e STEEM_CONFIG='{"host": "172.19.0.2", "port": 3306, "user": "root", "pass": "123456", "db": "steem"}' --network lightdb --restart always --name lightdb-comments-tags ety001/lightdb-transfer:latest /app/comments_tags.py
+
+# docker run -itd -e STEEM_CONFIG='{"host": "172.19.0.2", "port": 3306, "user": "root", "pass": "123456", "db": "steem"}' --network lightdb --restart always --name lightdb-votes ety001/lightdb-transfer:latest /app/votes.py
+
+# docker run -itd -e STEEM_CONFIG='{"host": "172.19.0.2", "port": 3306, "user": "root", "pass": "123456", "db": "steem"}' --network lightdb --restart always --name lightdb-undo ety001/lightdb-transfer:latest /app/undo.py
+
+# docker run -itd -e STEEM_CONFIG='{"host": "172.19.0.2", "port": 3306, "user": "root", "pass": "123456", "db": "steem"}' --network lightdb --restart always --name lightdb-collect ety001/lightdb-transfer:latest /app/collect.py
 ```
 
-### Recycle Tasks
+Check if all containers are running.
 
-Undo
+```
+# docker ps
+CONTAINER ID        IMAGE                            COMMAND                   CREATED             STATUS              PORTS                    NAMES
+bd4f44ebd922        ety001/lightdb-transfer:latest   "/app/collect.py"         5 seconds ago       Up 3 seconds                                 lightdb-collect
+dd70d76f31d2        ety001/lightdb-transfer:latest   "/app/undo.py"            11 seconds ago      Up 9 seconds                                 lightdb-undo
+4e8f9228e70c        ety001/lightdb-transfer:latest   "/app/votes.py"           17 seconds ago      Up 15 seconds                                lightdb-votes
+5aab28feffa8        ety001/lightdb-transfer:latest   "/app/comments_tags.…"    26 seconds ago      Up 24 seconds                                lightdb-comments-tags
+806485070c45        ety001/lightdb-transfer:latest   "/app/comments.py"        32 seconds ago      Up 31 seconds                                lightdb-comments
+124f84348d50        ety001/lightdb-transfer:latest   "/app/tags.py"            39 seconds ago      Up 37 seconds                                lightdb-tags
+628caeb2ae43        ety001/lightdb-transfer:latest   "/app/user_relation.…"    46 seconds ago      Up 44 seconds                                lightdb-user-relation
+534348f38d17        ety001/lightdb-transfer:latest   "/app/users.py"           2 minutes ago       Up 2 minutes                                 lightdb-users
+3e8f1ef3567b        ety001/lightdb-transfer:latest   "/app/base.py"            2 minutes ago       Up 2 minutes                                 lightdb-base
+bfcaf0c230e0        mariadb                          "docker-entrypoint.s…"    39 minutes ago      Up 39 minutes       0.0.0.0:3306->3306/tcp   mysql
+```
+
+> Recommand to install [Portainer](https://portainer.io/install.html) to manage all your docker containers.
+> Portainer will give you an UI to get more info of your containers.
 
 ### Data API Layer
 
@@ -108,12 +103,6 @@ Undo
 * User: steem
 * Pass: steem
 * DBName: steem
-
-You can get current block num by this SQL:
-
-```
-select * from config where param = "current_head";
-```
 
 # Contact Me
 

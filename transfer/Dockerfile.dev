@@ -5,9 +5,9 @@ RUN apk --no-cache add python3 python3-dev gcc git musl-dev libffi-dev openssl-d
         && pip3 install pymysql \
         && pip3 install aiomysql \
         && pip3 install diff_match_patch
-ENV WORKER=5 \
+ENV WORKER=1 \
            BLOCK_STEP=1000 \
-           SLICE_STEP=50 \
+           SLICE_STEP=5 \
            UNDO_LIMIT=1000 \
            UNDO_COUNT=50 \
            UNDO_SLEEP=60 \
