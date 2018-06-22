@@ -8,9 +8,9 @@ Data as cache, Final Social Data from cache, Apis for Final Social Data.
 All components will be deployed with Docker. This will make people who want to customize
 LightDB easy to run it on their servers.
 
-# DB Structure
+# DB Schema
 
-![](https://steemitimages.com/DQmXFfTDbr4s5wSu5AHuMd6zdHz2gGcMJp2XaTQ1t6GNMfy/image.png)
+![](https://raw.githubusercontent.com/ety001/steem-lightdb/master/db_schema.png)
 
 # How to deploy
 
