@@ -404,10 +404,12 @@ def insertData(table, undo_id, val):
         comment_ids = []
         for v in val:
             comment_ids.append(v[0])
-        tuple_comment_ids = tuple(comment_ids)
-        format_strings = ','.join(['%s'] * len(comment_ids))
-        sql2 = '''delete from comments_tags
-            where comments_id in (%s)''' % format_strings
+        if len(comment_ids) > 0:
+            tuple_comment_ids = tuple(comment_ids)
+            format_strings = ','.join(['%s'] * len(comment_ids))
+            sql2 = 'delete from comments_tags where comments_id in (%s)' % format_strings
+        else:
+            sql2 = None
     elif table == 'user_relations':
         sql = '''insert into user_relations
             (follower_id, following_id, what, created_at)
@@ -428,7 +430,8 @@ def insertData(table, undo_id, val):
         cur = db.cursor()
         if table == 'comments_tags':
             # remove previous comment_tag records
-            cur.execute(sql2, tuple_comment_ids)
+            if sql2 != None:
+                cur.execute(sql2, tuple_comment_ids)
         #update data
         cur.executemany(sql, val)
         if undo_id != None:

@@ -83,11 +83,12 @@ class CommentsTagsProcess(BlockProcess):
                 comment_ids = []
                 for v in self.prepared_data['data']:
                     comment_ids.append(v[0])
-                tuple_comment_ids = tuple(comment_ids)
-                format_strings = ','.join(['%s'] * len(comment_ids))
-                sql_del = '''delete from comments_tags
-                    where comments_id in (%s)''' % format_strings
-                await cur.execute(sql_del, tuple_comment_ids)
+                if len(comment_ids) > 0:
+                    tuple_comment_ids = tuple(comment_ids)
+                    format_strings = ','.join(['%s'] * len(comment_ids))
+                    sql_del = '''delete from comments_tags
+                        where comments_id in (%s)''' % format_strings
+                    await cur.execute(sql_del, tuple_comment_ids)
                 # then insert
                 sql_main_data = '''
                     insert ignore into comments_tags
