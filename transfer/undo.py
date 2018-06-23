@@ -160,22 +160,26 @@ def parseCommentTag(val):
                     print('not_found_comment_in_comment_tag')
                     return updateCount(undo_id)
 
-            if 'tags' in json_metadata:
-                if isinstance(json_metadata['tags'], list):
-                    tmp_insert_data = []
-                    for tag in json_metadata['tags']:
-                        tag_id = getId('tags', tag)
-                        if tag_id != None:
-                            tmp_insert_data.append((comment[0], tag_id))
-                        else:
-                            print('not_found_tag_id', undo_id)
-                            insertData('tags', None, ((tag), ))
-                            return updateCount(undo_id)
-                    return insertData('comments_tags', undo_id, tuple(tmp_insert_data))
+            try:
+                if 'tags' in json_metadata:
+                    if isinstance(json_metadata['tags'], list):
+                        tmp_insert_data = []
+                        for tag in json_metadata['tags']:
+                            tag_id = getId('tags', tag)
+                            if tag_id != None:
+                                tmp_insert_data.append((comment[0], tag_id))
+                            else:
+                                print('not_found_tag_id', undo_id)
+                                insertData('tags', None, ((tag), ))
+                                return updateCount(undo_id)
+                        return insertData('comments_tags', undo_id, tuple(tmp_insert_data))
+                    else:
+                        return delData('undo_op', None, undo_id)
                 else:
                     return delData('undo_op', None, undo_id)
-            else:
-                return delData('undo_op', None, undo_id)
+            except TypeError as e:
+                print('json_metadata_type_error', e, undo_id)
+                return delData('undo_op', None, undo_id)  
     except Exception as e:
         utils.PrintException(undo_id)
         return updateCount(undo_id)
