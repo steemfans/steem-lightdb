@@ -12,13 +12,16 @@ import pymysql
 
 # task_type = 3
 def parseComment(val):
+    config = utils.get_config()
+    undo_count = config['undo_count']
     undo_id = val[0]
     block_num = val[1]
     trans_id = val[2]
     op_idx = val[3]
     op = json.loads(val[4])
     task_type = val[5]
-    block_time = val[6]
+    block_time = val[7]
+    current_count = val[6]
     try:
         op_type = op[0]
         op_detail = op[1]
@@ -35,8 +38,22 @@ def parseComment(val):
                 patches = dmp.patch_fromText(op_detail['body']);
                 old_comment = getData('comments', (author_text, op_detail['permlink']))
                 if old_comment == None:
-                    print('comment_not_exist_dmp', undo_id)
-                    return updateCount(undo_id)
+                    if current_count == undo_count:
+                        # if data cannot find parent, insert it directly.
+                        return insertData('comments', undo_id, ((
+                            op_detail['permlink'], # permlink
+                            op_detail['title'],
+                            op_detail['body'],
+                            json.dumps(op_detail['json_metadata']),
+                            op_detail['parent_permlink'], # parent_permlink
+                            block_time, # created_at
+                            block_time, # updated_at
+                            False,
+                            parent_author_text,
+                            author_text), ))
+                    else:
+                        print('comment_not_exist_dmp', undo_id)
+                        return updateCount(undo_id)
                 print('old_comment_dmp:', undo_id)
                 new_body = dmp.patch_apply(patches, old_comment[4]);
                 print('dmp_edit_comment', block_num, trans_id, op_idx, old_comment[0])
@@ -56,7 +73,7 @@ def parseComment(val):
                 if old_comment == None:
                     print('comment_not_exist2', undo_id)
                     return insertData('comments', undo_id, ((
-                        old_comment[2], # permlink
+                        op_detail['permlink'], # permlink
                         op_detail['title'],
                         op_detail['body'],
                         json.dumps(op_detail['json_metadata']),
