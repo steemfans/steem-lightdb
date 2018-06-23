@@ -120,13 +120,16 @@ def parseComment(val):
 
 # task_type = 5
 def parseCommentTag(val):
+    config = utils.get_config()
+    undo_count = config['undo_count']
     undo_id = val[0]
     block_num = val[1]
     trans_id = val[2]
     op_idx = val[3]
     op = json.loads(val[4])
     task_type = val[5]
-    block_time = val[6]
+    block_time = val[7]
+    current_count = val[6]
     try:
         op_type = op[0]
         op_detail = op[1]
@@ -141,8 +144,21 @@ def parseCommentTag(val):
 
             comment = getData('comments', (op_detail['author'], op_detail['permlink']))
             if comment == None:
-                print('not_found_comment_in_comment_tag')
-                return updateCount(undo_id)
+                if current_count == undo_count:
+                    return insertData('comments', undo_id, ((
+                        op_detail['permlink'], # permlink
+                        op_detail['title'],
+                        op_detail['body'],
+                        json.dumps(op_detail['json_metadata']),
+                        op_detail['parent_permlink'], # parent_permlink
+                        block_time, # created_at
+                        block_time, # updated_at
+                        False,
+                        op_detail['parent_author'],
+                        op_detail['author']), ))
+                else:
+                    print('not_found_comment_in_comment_tag')
+                    return updateCount(undo_id)
 
             if 'tags' in json_metadata:
                 if isinstance(json_metadata['tags'], list):
@@ -153,6 +169,7 @@ def parseCommentTag(val):
                             tmp_insert_data.append((comment[0], tag_id))
                         else:
                             print('not_found_tag_id', undo_id)
+                            insertData('tags', None, ((tag), ))
                             return updateCount(undo_id)
                     return insertData('comments_tags', undo_id, tuple(tmp_insert_data))
                 else:
@@ -165,13 +182,16 @@ def parseCommentTag(val):
 
 # task_type = 6
 def parseVote(val):
+    config = utils.get_config()
+    undo_count = config['undo_count']
     undo_id = val[0]
     block_num = val[1]
     trans_id = val[2]
     op_idx = val[3]
     op = json.loads(val[4])
     task_type = val[5]
-    block_time = val[6]
+    block_time = val[7]
+    current_count = val[6]
     try:
         op_type = op[0]
         op_detail = op[1]
@@ -221,13 +241,16 @@ def parseVote(val):
 
 # task_type = 7
 def parseUserRelation(val):
+    config = utils.get_config()
+    undo_count = config['undo_count']
     undo_id = val[0]
     block_num = val[1]
     trans_id = val[2]
     op_idx = val[3]
     op = json.loads(val[4])
     task_type = val[5]
-    block_time = val[6]
+    block_time = val[7]
+    current_count = val[6]
     try:
         op_type = op[0]
         op_detail = op[1]
@@ -433,7 +456,7 @@ def insertData(table, undo_id, val):
             values
             (%s, %s, %s, %s)'''
     elif table == 'tags':
-        sql = '''insert into tags
+        sql = '''insert ignore into tags
             (tag_name)
             values
             (%s)'''
