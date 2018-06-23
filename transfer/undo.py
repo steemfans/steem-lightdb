@@ -397,7 +397,7 @@ def insertData(table, undo_id, val):
             values
             (%s, %s, %s, %s, %s, %s)'''
     elif table == 'comments_tags':
-        sql = '''insert into comments_tags
+        sql = '''insert ignore into comments_tags
             (comments_id, tags_id)
             values
             (%s, %s)'''
